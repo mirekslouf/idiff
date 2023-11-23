@@ -4,4 +4,4 @@ idiff.ncorr
 Noise correction/redution. 
 '''
 
-# TODO, David, removal of background noise
+# TODO, Pavlina, removal of background noise
