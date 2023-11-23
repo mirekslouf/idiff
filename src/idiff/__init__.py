@@ -9,4 +9,9 @@ Improve DIFFractograms = improve quality of 2D diffraction patterns.
 * idiff.psf    = advanced methods of estimating PSF = point spread function       
 '''
 
-__version__ = "0.0.2"
+__version__ = "0.1"
+
+import idiff.bcorr
+import idiff.deconv
+import idiff.ncorr
+import idiff.psf

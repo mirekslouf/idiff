@@ -28,10 +28,50 @@
 
         <h2>Contents</h2>
         <ul>
-  <li><a href="#idiffdeconv">idiff.deconv</a></li>
+  <li><a href="#idiffpsf">idiff.psf</a></li>
 </ul>
 
 
+
+        <h2>API Documentation</h2>
+            <ul class="memberlist">
+            <li>
+                    <a class="function" href="#save_psf_to_disk">save_psf_to_disk</a>
+            </li>
+            <li>
+                    <a class="function" href="#read_psf_from_disk">read_psf_from_disk</a>
+            </li>
+            <li>
+                    <a class="function" href="#plot_psf">plot_psf</a>
+            </li>
+            <li>
+                    <a class="function" href="#circular_mask">circular_mask</a>
+            </li>
+            <li>
+                    <a class="class" href="#PSFtype1">PSFtype1</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#PSFtype1.__init__">PSFtype1</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#PSFtype1.get_psf">get_psf</a>
+                        </li>
+                </ul>
+
+            </li>
+            <li>
+                    <a class="class" href="#PSFtype2">PSFtype2</a>
+                            <ul class="memberlist">
+                        <li>
+                                <a class="function" href="#PSFtype2.__init__">PSFtype2</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#PSFtype2.get_psf">get_psf</a>
+                        </li>
+                </ul>
+
+            </li>
+    </ul>
 
 
 
@@ -47,26 +87,989 @@
                     <h1 class="modulename">
 <a href="./../idiff.html">idiff</a><wbr>.psf    </h1>
 
-                        <div class="docstring"><h2 id="idiffdeconv"><a href="deconv.html">idiff.deconv</a></h2>
+                        <div class="docstring"><h2 id="idiffpsf"><a href="">idiff.psf</a></h2>
 
-<p>Advanced deconvolution methods.</p>
+<p>Estimate PSF from 4D-STEM datafiles.</p>
+
+<p>PSF = Point Spread Function = XY-spread of the primary beam.</p>
 </div>
 
                         <input id="mod-psf-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 
                         <label class="view-source-button" for="mod-psf-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">1</span></a><span class="sd">&#39;&#39;&#39;</span>
-</span><span id="L-2"><a href="#L-2"><span class="linenos">2</span></a><span class="sd">idiff.deconv</span>
-</span><span id="L-3"><a href="#L-3"><span class="linenos">3</span></a><span class="sd">------------</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos">4</span></a><span class="sd">Advanced deconvolution methods. </span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos">5</span></a><span class="sd">&#39;&#39;&#39;</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos">6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos">7</span></a><span class="c1"># TODO, David, advanced methods of PSF estimation.</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a><span class="sd">idiff.psf</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="sd">---------</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="sd">Estimate PSF from 4D-STEM datafiles.</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a>
+</span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="sd">PSF = Point Spread Function = XY-spread of the primary beam.</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a><span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a>
+</span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a><span class="kn">import</span> <span class="nn">stemdiff.io</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos"> 12</span></a>
+</span><span id="L-13"><a href="#L-13"><span class="linenos"> 13</span></a><span class="k">def</span> <span class="nf">save_psf_to_disk</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos"> 14</span></a>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos"> 15</span></a><span class="sd">    Save PSF function;</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos"> 16</span></a><span class="sd">    the function is saved as a file in NumPy format = NPY-file.</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos"> 17</span></a>
+</span><span id="L-18"><a href="#L-18"><span class="linenos"> 18</span></a><span class="sd">    Parameters</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos"> 19</span></a><span class="sd">    ----------</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos"> 20</span></a><span class="sd">    arr : 2D-numpy array</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos"> 21</span></a><span class="sd">        The array with the saved 2D-PSF function, which represents</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos"> 22</span></a><span class="sd">        the experimentally determined XY-spread of the primary beam. </span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos"> 23</span></a><span class="sd">    output_file : str</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos"> 24</span></a><span class="sd">        Name of the output file (without extension);</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos"> 25</span></a><span class="sd">        the saved file will be named *output_file*.npy.</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos"> 26</span></a><span class="sd">    </span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos"> 27</span></a><span class="sd">    Returns</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos"> 28</span></a><span class="sd">    -------</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos"> 29</span></a><span class="sd">    Nothing</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos"> 30</span></a><span class="sd">        The result is the PSF = 2D-array in numpy format = *output_file*.npy.</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos"> 31</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos"> 32</span></a>    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">arr</span><span class="p">)</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos"> 33</span></a>
+</span><span id="L-34"><a href="#L-34"><span class="linenos"> 34</span></a><span class="k">def</span> <span class="nf">read_psf_from_disk</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos"> 35</span></a>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos"> 36</span></a><span class="sd">    Read PSF function;</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos"> 37</span></a><span class="sd">    the function is read from a file in NumPy format = NPY-file.</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos"> 38</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos"> 39</span></a><span class="sd">    Parameters</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos"> 40</span></a><span class="sd">    ----------</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos"> 41</span></a><span class="sd">    input_file : str</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos"> 42</span></a><span class="sd">        The saved file with the PSF function = NPY-file.</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos"> 43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a><span class="sd">    Returns</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a><span class="sd">    -------</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a><span class="sd">    2D-numpy array</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a><span class="sd">        The array with the 2D-PSF function, which represents</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a><span class="sd">        the experimentally determined XY-spread of the primary beam.</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>    <span class="k">return</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a><span class="k">def</span> <span class="nf">plot_psf</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">plt_type</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span> <span class="n">plt_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>    <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a><span class="sd">    Show plot of PSF function.</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a><span class="sd">    </span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a><span class="sd">    Parameters</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a><span class="sd">    ----------</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a><span class="sd">    arr : 2D numpy array</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a><span class="sd">        The array with the saved 2D-PSF function, which represents</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a><span class="sd">        the experimentally determined XY-spread of the primary beam. </span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a><span class="sd">    plt_type : string</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a><span class="sd">        Either &#39;2D&#39; or &#39;3D&#39; - type of the plot.</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a><span class="sd">    plt_size : integer, optional, default=None</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a><span class="sd">        The size of the plot:</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a><span class="sd">        if plt_size is given, the function plots only the central square</span>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a><span class="sd">        with size = plt_size; otherwise it plots the whole array.</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a><span class="sd">    output : str, optional, default=None</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a><span class="sd">        The name of the output file:</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a><span class="sd">        if [output] is given, the function also saves the plot</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a><span class="sd">        with a filename [output].png; otherwise the plot is just shown.</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a><span class="sd">        </span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a><span class="sd">    Returns</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a><span class="sd">    -------</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a><span class="sd">    Nothing</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a><span class="sd">         The function just shows the plot of PSF in 2D or 3D.</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a><span class="sd">    &#39;&#39;&#39;</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>    <span class="c1"># Copy of arr variable</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>    <span class="c1"># (in order not to change original array during (possible) resizing</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>    <span class="n">arr2</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>    <span class="c1"># Prepare variables</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>    <span class="n">Xsize</span><span class="p">,</span><span class="n">Ysize</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>    <span class="n">xc</span><span class="p">,</span><span class="n">yc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">Xsize</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">Ysize</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>    <span class="c1"># Reduce array size for plotting, if required</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>    <span class="c1"># (here we work with the array copy so as not to change to original</span>
+</span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>    <span class="k">if</span> <span class="n">plt_size</span><span class="p">:</span>
+</span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>        <span class="n">arr2</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span><span class="n">plt_size</span><span class="p">,</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">)</span>
+</span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>    <span class="k">if</span> <span class="n">plt_type</span><span class="o">==</span><span class="s1">&#39;2D&#39;</span><span class="p">:</span>
+</span><span id="L-89"><a href="#L-89"><span class="linenos"> 89</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">arr2</span><span class="p">)</span>
+</span><span id="L-90"><a href="#L-90"><span class="linenos"> 90</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+</span><span id="L-91"><a href="#L-91"><span class="linenos"> 91</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="L-92"><a href="#L-92"><span class="linenos"> 92</span></a>        <span class="c1"># Prepare meshgrid for 3D-plotting</span>
+</span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>        <span class="n">Xsize</span><span class="p">,</span><span class="n">Ysize</span> <span class="o">=</span> <span class="n">arr2</span><span class="o">.</span><span class="n">shape</span>
+</span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>        <span class="n">Xhalf</span><span class="p">,</span><span class="n">Yhalf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Xsize</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">Ysize</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">Xhalf</span><span class="p">,</span><span class="n">Xhalf</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">Xsize</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>        <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">Yhalf</span><span class="p">,</span><span class="n">Yhalf</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">Ysize</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>        <span class="n">Xm</span><span class="p">,</span><span class="n">Ym</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>        <span class="c1"># Create 3D-plot</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>        <span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>        <span class="n">ax</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>            <span class="n">Xm</span><span class="p">,</span><span class="n">Ym</span><span class="p">,</span><span class="n">arr2</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;coolwarm&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">antialiased</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>        <span class="c1"># ADJUSTMENTS OF RANGE AND FORMAT OF Z-AXIS</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>        <span class="c1"># (the following commands can be activated if necessary</span>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>        <span class="c1"># (a) Define Z-scale</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>        <span class="c1"># ax.set_zlim(0,12000)</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>        <span class="c1"># (b) Separate thousands by comma</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>        <span class="c1"># (according to https://stackoverflow.com/q/25973581</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a>        <span class="c1"># (extra number 8 in the format sets the size of number = 8 places</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>        <span class="c1"># (this adds extra space in front of the number - offset from Z-axis</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>        <span class="c1"># ax.zaxis.set_major_formatter(</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>        <span class="c1">#     plt.matplotlib.ticker.StrMethodFormatter(&#39;{x:8,.0f}&#39;))       </span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>    <span class="c1"># Final output: show the plot (and save it, if it was requested)</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>    <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="c1"># (if argument [output] was not given =&gt; just show the plot</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>    <span class="c1"># (if argument [output] was given =&gt; save the plot and then show it</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>    <span class="c1"># (it must be done in this order - because plt.show() clears the plot!</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="k">def</span> <span class="nf">circular_mask</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a>    <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="sd">    Create a circular mask for rectangular array</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a><span class="sd">    Parameters</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">    ----------</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a><span class="sd">    h : int</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="sd">        Height of the array.</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="sd">    w : int</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="sd">        Width of the array.</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a><span class="sd">    center : list or tuple of two integers, optional, default is None</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a><span class="sd">        Center of the mask.</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a><span class="sd">        If None, center will be a geometric center of array.</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a><span class="sd">    radius : int, optional, default is None</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a><span class="sd">        Radius of the mask.</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a><span class="sd">        If None, radius will be the distance to the shorter array wall. </span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a><span class="sd">    Returns</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a><span class="sd">    -------</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a><span class="sd">    mask : 2D-array of bool values</span>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a><span class="sd">        Circular mask: arr * mask = arr with zero values outside the mask.</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a><span class="sd">        </span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a><span class="sd">    Note</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a><span class="sd">    ----</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a><span class="sd">    Copy+pasted and slightly modified from www.</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="sd">    GoogleSearch: numpy create circular mask on rectangular array</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="sd">    https://stackoverflow.com/q/44865023</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a><span class="sd">    &#39;&#39;&#39;</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>    <span class="c1"># Determine center and radius, if arguments were None.</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> 
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>        <span class="c1"># use the middle of the image</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>        <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>    <span class="k">if</span> <span class="n">radius</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>        <span class="c1"># use the smallest distance between the center and image walls</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a>        <span class="n">radius</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">h</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">w</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a>    <span class="c1"># Create orthogonal grid and calculate distance from center</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a>    <span class="c1"># (exmplanation =&gt; https://stackoverflow.com/q/44865023</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a>    <span class="n">Y</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ogrid</span><span class="p">[:</span><span class="n">w</span><span class="p">,</span> <span class="p">:</span><span class="n">h</span><span class="p">]</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>    <span class="n">dist_from_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">Y</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>    <span class="c1"># Calculate mask</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>    <span class="c1"># (explanation =&gt; https://stackoverflow.com/q/44865023</span>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>    <span class="n">mask</span> <span class="o">=</span> <span class="n">dist_from_center</span> <span class="o">&lt;=</span> <span class="n">radius</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>    <span class="c1"># Return the mask</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>    <span class="c1"># (2D-boolean array to modify original array</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>    <span class="c1"># (arr * mask = array with zero values outsid the mask</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>    <span class="k">return</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a><span class="k">class</span> <span class="nc">PSFtype1</span><span class="p">:</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>    
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>    <span class="k">def</span> <span class="nf">get_psf</span><span class="p">(</span><span class="n">SDATA</span><span class="p">,</span> <span class="n">DIFFIMAGES</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>        <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a><span class="sd">        Get PSF of type1 = estimated from datafiles with low/no diffractions.</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a><span class="sd">        Parameters</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a><span class="sd">        ----------</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a><span class="sd">        SDATA : stemdiff.gvars.SourceData object</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a><span class="sd">            The object describes source data (detector, data_dir, filenames).</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a><span class="sd">        DIFFIMAGES : stemdiff.gvars.DiffImages object</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a><span class="sd">            Object describing the diffraction images/patterns.</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a><span class="sd">        df : pandas.DataFrame object</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a><span class="sd">            Database with datafile names and characteristics.</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a><span class="sd">            PSF is estimated from the files included in this database.</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a><span class="sd">            Typically, df is a sub-database containing low-diffracting files.</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a><span class="sd">        circular : bool, optional, default is False</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a><span class="sd">            If True, apply circular mask - change square PSF to circular PSF.</span>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a><span class="sd">            </span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a><span class="sd">        Returns</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a><span class="sd">        -------</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a><span class="sd">        psf : 2D-numpy array</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a><span class="sd">            The array represents estimate of experimental PSF.</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a><span class="sd">        &#39;&#39;&#39;</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a>        <span class="c1"># (0) Prepare variables</span>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a>        <span class="n">file_counter</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a>        <span class="n">R</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">upscale</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>        <span class="n">det_size</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">detector_size</span>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>        <span class="n">psf_size</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">psfsize</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>        <span class="c1"># (1) Prepare empty array for PSF calculation</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>        <span class="k">if</span> <span class="n">psf_size</span><span class="p">:</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>            <span class="n">psf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>            <span class="n">psf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>        <span class="c1"># (2) Go through the files and calculate average PSF out of them</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>        <span class="k">for</span> <span class="n">index</span><span class="p">,</span><span class="n">datafile</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>            <span class="c1"># (a) Read datafile to array and increase file_counter</span>
+</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>            <span class="n">file_to_read</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">datafile</span><span class="o">.</span><span class="n">DatafileName</span><span class="p">)</span>
+</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>            <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Datafiles</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SDATA</span><span class="p">,</span> <span class="n">file_to_read</span><span class="p">)</span>
+</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a>            <span class="n">file_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a>            <span class="c1"># (b) Rescale array</span>
+</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>            <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>            <span class="c1"># (c) Remove edges if psf_size is given</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a>            <span class="k">if</span> <span class="n">psf_size</span><span class="p">:</span>
+</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a>                <span class="n">xc</span><span class="p">,</span><span class="n">yc</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">find_center</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a>                    <span class="n">csquare</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">csquare</span><span class="o">*</span><span class="n">R</span><span class="p">,</span>
+</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a>                    <span class="n">cintensity</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">cintensity</span><span class="p">)</span>
+</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a>                <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a>                    <span class="n">rsize</span> <span class="o">=</span> <span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">xc</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">xc</span><span class="p">),</span> <span class="n">yc</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">yc</span><span class="p">))</span>
+</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>                <span class="n">psf</span> <span class="o">+=</span> <span class="n">arr</span>
+</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>                <span class="n">psf</span> <span class="o">+=</span> <span class="n">arr</span>
+</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>        <span class="c1"># (3) Calculate final experimental PSF</span>
+</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a>        <span class="c1"># (divide sum by no_of_summed_files in order to get reasonable values</span>
+</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">psf</span><span class="o">/</span><span class="n">file_counter</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a>        <span class="c1"># (4) Return final experimental PSF</span>
+</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a>        <span class="k">return</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a>
+</span><span id="L-231"><a href="#L-231"><span class="linenos">231</span></a><span class="k">class</span> <span class="nc">PSFtype2</span><span class="p">:</span>
+</span><span id="L-232"><a href="#L-232"><span class="linenos">232</span></a>    
+</span><span id="L-233"><a href="#L-233"><span class="linenos">233</span></a>    <span class="k">def</span> <span class="nf">get_psf</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</span><span id="L-234"><a href="#L-234"><span class="linenos">234</span></a>        <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-235"><a href="#L-235"><span class="linenos">235</span></a><span class="sd">        Get PSF of type2 = estimated from a small central region.</span>
+</span><span id="L-236"><a href="#L-236"><span class="linenos">236</span></a>
+</span><span id="L-237"><a href="#L-237"><span class="linenos">237</span></a><span class="sd">        Parameters</span>
+</span><span id="L-238"><a href="#L-238"><span class="linenos">238</span></a><span class="sd">        ----------</span>
+</span><span id="L-239"><a href="#L-239"><span class="linenos">239</span></a><span class="sd">        arr : 2D-numpy array</span>
+</span><span id="L-240"><a href="#L-240"><span class="linenos">240</span></a><span class="sd">            The array/datafile, from which the PSF is to be determined.</span>
+</span><span id="L-241"><a href="#L-241"><span class="linenos">241</span></a><span class="sd">            The array is a square with geometrical center = intensity center.</span>
+</span><span id="L-242"><a href="#L-242"><span class="linenos">242</span></a><span class="sd">            See *Technical notes* below for more details and consequences.</span>
+</span><span id="L-243"><a href="#L-243"><span class="linenos">243</span></a><span class="sd">        psf_size : int</span>
+</span><span id="L-244"><a href="#L-244"><span class="linenos">244</span></a><span class="sd">            The size/diameter of PSF function to be determined.</span>
+</span><span id="L-245"><a href="#L-245"><span class="linenos">245</span></a><span class="sd">        circular : bool, optional, default is False</span>
+</span><span id="L-246"><a href="#L-246"><span class="linenos">246</span></a><span class="sd">            If True, apply circular mask - change square PSF to circular PSF.</span>
+</span><span id="L-247"><a href="#L-247"><span class="linenos">247</span></a><span class="sd">            </span>
+</span><span id="L-248"><a href="#L-248"><span class="linenos">248</span></a><span class="sd">        Returns</span>
+</span><span id="L-249"><a href="#L-249"><span class="linenos">249</span></a><span class="sd">        -------</span>
+</span><span id="L-250"><a href="#L-250"><span class="linenos">250</span></a><span class="sd">        psf : 2D-numpy array</span>
+</span><span id="L-251"><a href="#L-251"><span class="linenos">251</span></a><span class="sd">            The array represents estimate of experimental PSF.</span>
+</span><span id="L-252"><a href="#L-252"><span class="linenos">252</span></a>
+</span><span id="L-253"><a href="#L-253"><span class="linenos">253</span></a><span class="sd">        Technical notes</span>
+</span><span id="L-254"><a href="#L-254"><span class="linenos">254</span></a><span class="sd">        --------------</span>
+</span><span id="L-255"><a href="#L-255"><span class="linenos">255</span></a><span class="sd">        In our algorithm, we send a square centered array to this function.</span>
+</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a><span class="sd">        This means that intensity center = geometric center of the array.</span>
+</span><span id="L-257"><a href="#L-257"><span class="linenos">257</span></a><span class="sd">        Consequence: we do not have to determine intensity center</span>
+</span><span id="L-258"><a href="#L-258"><span class="linenos">258</span></a><span class="sd">        and waste time - it is enough to calculate geometrical center.</span>
+</span><span id="L-259"><a href="#L-259"><span class="linenos">259</span></a><span class="sd">        &#39;&#39;&#39;</span>
+</span><span id="L-260"><a href="#L-260"><span class="linenos">260</span></a>        <span class="c1"># Get center</span>
+</span><span id="L-261"><a href="#L-261"><span class="linenos">261</span></a>        <span class="c1"># (just geometrical center as explained in the docstring</span>
+</span><span id="L-262"><a href="#L-262"><span class="linenos">262</span></a>        <span class="n">xc</span> <span class="o">=</span> <span class="n">yc</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+</span><span id="L-263"><a href="#L-263"><span class="linenos">263</span></a>        <span class="c1"># Remove edges</span>
+</span><span id="L-264"><a href="#L-264"><span class="linenos">264</span></a>        <span class="c1"># (leave only central square with psf_size </span>
+</span><span id="L-265"><a href="#L-265"><span class="linenos">265</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">,</span> <span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">)</span>
+</span><span id="L-266"><a href="#L-266"><span class="linenos">266</span></a>        <span class="c1"># Remove background</span>
+</span><span id="L-267"><a href="#L-267"><span class="linenos">267</span></a>        <span class="c1"># (PSF is from the center, it &quot;sits&quot; on some background intensity</span>
+</span><span id="L-268"><a href="#L-268"><span class="linenos">268</span></a>        <span class="c1"># !!! Convert PSF from uint to float - uint fails for negative values!</span>
+</span><span id="L-269"><a href="#L-269"><span class="linenos">269</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="L-270"><a href="#L-270"><span class="linenos">270</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span><span id="L-271"><a href="#L-271"><span class="linenos">271</span></a>        <span class="c1"># Convert square PSF to circular PSF if requested</span>
+</span><span id="L-272"><a href="#L-272"><span class="linenos">272</span></a>        <span class="k">if</span> <span class="n">circular</span><span class="p">:</span>
+</span><span id="L-273"><a href="#L-273"><span class="linenos">273</span></a>            <span class="c1"># Apply mask</span>
+</span><span id="L-274"><a href="#L-274"><span class="linenos">274</span></a>            <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">*</span> <span class="n">circular_mask</span><span class="p">(</span><span class="n">psf_size</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">)</span>
+</span><span id="L-275"><a href="#L-275"><span class="linenos">275</span></a>            <span class="c1"># Remove the remnants of background</span>
+</span><span id="L-276"><a href="#L-276"><span class="linenos">276</span></a>            <span class="c1"># (after removing edges, array values may be slightly above zero!</span>
+</span><span id="L-277"><a href="#L-277"><span class="linenos">277</span></a>            <span class="c1"># (1) We subtract the 2nd lowest value - the lowest are the zeros</span>
+</span><span id="L-278"><a href="#L-278"><span class="linenos">278</span></a>            <span class="n">the_second_lowest_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">[</span><span class="n">psf</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">)])</span>
+</span><span id="L-279"><a href="#L-279"><span class="linenos">279</span></a>            <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">-</span> <span class="n">the_second_lowest_value</span>
+</span><span id="L-280"><a href="#L-280"><span class="linenos">280</span></a>        <span class="c1"># All negative values shoud go back above zero!</span>
+</span><span id="L-281"><a href="#L-281"><span class="linenos">281</span></a>        <span class="c1"># (the negative values may occur due to various recalcs and roundings</span>
+</span><span id="L-282"><a href="#L-282"><span class="linenos">282</span></a>        <span class="c1"># (they are very dangerous, leading to unwanted side-effects and errors</span>
+</span><span id="L-283"><a href="#L-283"><span class="linenos">283</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">psf</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">psf</span><span class="p">)</span>
+</span><span id="L-284"><a href="#L-284"><span class="linenos">284</span></a>        <span class="c1"># Return final PSF</span>
+</span><span id="L-285"><a href="#L-285"><span class="linenos">285</span></a>        <span class="k">return</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
 </span></pre></div>
 
 
             </section>
+                <section id="save_psf_to_disk">
+                            <input id="save_psf_to_disk-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">save_psf_to_disk</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">arr</span>, </span><span class="param"><span class="n">output_file</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="save_psf_to_disk-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#save_psf_to_disk"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="save_psf_to_disk-14"><a href="#save_psf_to_disk-14"><span class="linenos">14</span></a><span class="k">def</span> <span class="nf">save_psf_to_disk</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+</span><span id="save_psf_to_disk-15"><a href="#save_psf_to_disk-15"><span class="linenos">15</span></a>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span id="save_psf_to_disk-16"><a href="#save_psf_to_disk-16"><span class="linenos">16</span></a><span class="sd">    Save PSF function;</span>
+</span><span id="save_psf_to_disk-17"><a href="#save_psf_to_disk-17"><span class="linenos">17</span></a><span class="sd">    the function is saved as a file in NumPy format = NPY-file.</span>
+</span><span id="save_psf_to_disk-18"><a href="#save_psf_to_disk-18"><span class="linenos">18</span></a>
+</span><span id="save_psf_to_disk-19"><a href="#save_psf_to_disk-19"><span class="linenos">19</span></a><span class="sd">    Parameters</span>
+</span><span id="save_psf_to_disk-20"><a href="#save_psf_to_disk-20"><span class="linenos">20</span></a><span class="sd">    ----------</span>
+</span><span id="save_psf_to_disk-21"><a href="#save_psf_to_disk-21"><span class="linenos">21</span></a><span class="sd">    arr : 2D-numpy array</span>
+</span><span id="save_psf_to_disk-22"><a href="#save_psf_to_disk-22"><span class="linenos">22</span></a><span class="sd">        The array with the saved 2D-PSF function, which represents</span>
+</span><span id="save_psf_to_disk-23"><a href="#save_psf_to_disk-23"><span class="linenos">23</span></a><span class="sd">        the experimentally determined XY-spread of the primary beam. </span>
+</span><span id="save_psf_to_disk-24"><a href="#save_psf_to_disk-24"><span class="linenos">24</span></a><span class="sd">    output_file : str</span>
+</span><span id="save_psf_to_disk-25"><a href="#save_psf_to_disk-25"><span class="linenos">25</span></a><span class="sd">        Name of the output file (without extension);</span>
+</span><span id="save_psf_to_disk-26"><a href="#save_psf_to_disk-26"><span class="linenos">26</span></a><span class="sd">        the saved file will be named *output_file*.npy.</span>
+</span><span id="save_psf_to_disk-27"><a href="#save_psf_to_disk-27"><span class="linenos">27</span></a><span class="sd">    </span>
+</span><span id="save_psf_to_disk-28"><a href="#save_psf_to_disk-28"><span class="linenos">28</span></a><span class="sd">    Returns</span>
+</span><span id="save_psf_to_disk-29"><a href="#save_psf_to_disk-29"><span class="linenos">29</span></a><span class="sd">    -------</span>
+</span><span id="save_psf_to_disk-30"><a href="#save_psf_to_disk-30"><span class="linenos">30</span></a><span class="sd">    Nothing</span>
+</span><span id="save_psf_to_disk-31"><a href="#save_psf_to_disk-31"><span class="linenos">31</span></a><span class="sd">        The result is the PSF = 2D-array in numpy format = *output_file*.npy.</span>
+</span><span id="save_psf_to_disk-32"><a href="#save_psf_to_disk-32"><span class="linenos">32</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="save_psf_to_disk-33"><a href="#save_psf_to_disk-33"><span class="linenos">33</span></a>    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">output_file</span><span class="p">,</span> <span class="n">arr</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Save PSF function;
+the function is saved as a file in NumPy format = NPY-file.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>arr</strong> (2D-numpy array):
+The array with the saved 2D-PSF function, which represents
+the experimentally determined XY-spread of the primary beam.</li>
+<li><strong>output_file</strong> (str):
+Name of the output file (without extension);
+the saved file will be named <em>output_file</em>.npy.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>Nothing</strong>: The result is the PSF = 2D-array in numpy format = <em>output_file</em>.npy.</li>
+</ul>
+</div>
+
+
+                </section>
+                <section id="read_psf_from_disk">
+                            <input id="read_psf_from_disk-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">read_psf_from_disk</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">input_file</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="read_psf_from_disk-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#read_psf_from_disk"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="read_psf_from_disk-35"><a href="#read_psf_from_disk-35"><span class="linenos">35</span></a><span class="k">def</span> <span class="nf">read_psf_from_disk</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
+</span><span id="read_psf_from_disk-36"><a href="#read_psf_from_disk-36"><span class="linenos">36</span></a>    <span class="sd">&quot;&quot;&quot;</span>
+</span><span id="read_psf_from_disk-37"><a href="#read_psf_from_disk-37"><span class="linenos">37</span></a><span class="sd">    Read PSF function;</span>
+</span><span id="read_psf_from_disk-38"><a href="#read_psf_from_disk-38"><span class="linenos">38</span></a><span class="sd">    the function is read from a file in NumPy format = NPY-file.</span>
+</span><span id="read_psf_from_disk-39"><a href="#read_psf_from_disk-39"><span class="linenos">39</span></a>
+</span><span id="read_psf_from_disk-40"><a href="#read_psf_from_disk-40"><span class="linenos">40</span></a><span class="sd">    Parameters</span>
+</span><span id="read_psf_from_disk-41"><a href="#read_psf_from_disk-41"><span class="linenos">41</span></a><span class="sd">    ----------</span>
+</span><span id="read_psf_from_disk-42"><a href="#read_psf_from_disk-42"><span class="linenos">42</span></a><span class="sd">    input_file : str</span>
+</span><span id="read_psf_from_disk-43"><a href="#read_psf_from_disk-43"><span class="linenos">43</span></a><span class="sd">        The saved file with the PSF function = NPY-file.</span>
+</span><span id="read_psf_from_disk-44"><a href="#read_psf_from_disk-44"><span class="linenos">44</span></a>
+</span><span id="read_psf_from_disk-45"><a href="#read_psf_from_disk-45"><span class="linenos">45</span></a><span class="sd">    Returns</span>
+</span><span id="read_psf_from_disk-46"><a href="#read_psf_from_disk-46"><span class="linenos">46</span></a><span class="sd">    -------</span>
+</span><span id="read_psf_from_disk-47"><a href="#read_psf_from_disk-47"><span class="linenos">47</span></a><span class="sd">    2D-numpy array</span>
+</span><span id="read_psf_from_disk-48"><a href="#read_psf_from_disk-48"><span class="linenos">48</span></a><span class="sd">        The array with the 2D-PSF function, which represents</span>
+</span><span id="read_psf_from_disk-49"><a href="#read_psf_from_disk-49"><span class="linenos">49</span></a><span class="sd">        the experimentally determined XY-spread of the primary beam.</span>
+</span><span id="read_psf_from_disk-50"><a href="#read_psf_from_disk-50"><span class="linenos">50</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="read_psf_from_disk-51"><a href="#read_psf_from_disk-51"><span class="linenos">51</span></a>    <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">input_file</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="read_psf_from_disk-52"><a href="#read_psf_from_disk-52"><span class="linenos">52</span></a>    <span class="k">return</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Read PSF function;
+the function is read from a file in NumPy format = NPY-file.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>input_file</strong> (str):
+The saved file with the PSF function = NPY-file.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>2D-numpy array</strong>: The array with the 2D-PSF function, which represents
+the experimentally determined XY-spread of the primary beam.</li>
+</ul>
+</div>
+
+
+                </section>
+                <section id="plot_psf">
+                            <input id="plot_psf-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">plot_psf</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">arr</span>, </span><span class="param"><span class="n">plt_type</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span>, </span><span class="param"><span class="n">plt_size</span><span class="o">=</span><span class="kc">None</span>, </span><span class="param"><span class="n">output</span><span class="o">=</span><span class="kc">None</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="plot_psf-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#plot_psf"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="plot_psf-54"><a href="#plot_psf-54"><span class="linenos"> 54</span></a><span class="k">def</span> <span class="nf">plot_psf</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">plt_type</span><span class="o">=</span><span class="s1">&#39;2D&#39;</span><span class="p">,</span> <span class="n">plt_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="plot_psf-55"><a href="#plot_psf-55"><span class="linenos"> 55</span></a>    <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="plot_psf-56"><a href="#plot_psf-56"><span class="linenos"> 56</span></a><span class="sd">    Show plot of PSF function.</span>
+</span><span id="plot_psf-57"><a href="#plot_psf-57"><span class="linenos"> 57</span></a><span class="sd">    </span>
+</span><span id="plot_psf-58"><a href="#plot_psf-58"><span class="linenos"> 58</span></a><span class="sd">    Parameters</span>
+</span><span id="plot_psf-59"><a href="#plot_psf-59"><span class="linenos"> 59</span></a><span class="sd">    ----------</span>
+</span><span id="plot_psf-60"><a href="#plot_psf-60"><span class="linenos"> 60</span></a><span class="sd">    arr : 2D numpy array</span>
+</span><span id="plot_psf-61"><a href="#plot_psf-61"><span class="linenos"> 61</span></a><span class="sd">        The array with the saved 2D-PSF function, which represents</span>
+</span><span id="plot_psf-62"><a href="#plot_psf-62"><span class="linenos"> 62</span></a><span class="sd">        the experimentally determined XY-spread of the primary beam. </span>
+</span><span id="plot_psf-63"><a href="#plot_psf-63"><span class="linenos"> 63</span></a><span class="sd">    plt_type : string</span>
+</span><span id="plot_psf-64"><a href="#plot_psf-64"><span class="linenos"> 64</span></a><span class="sd">        Either &#39;2D&#39; or &#39;3D&#39; - type of the plot.</span>
+</span><span id="plot_psf-65"><a href="#plot_psf-65"><span class="linenos"> 65</span></a><span class="sd">    plt_size : integer, optional, default=None</span>
+</span><span id="plot_psf-66"><a href="#plot_psf-66"><span class="linenos"> 66</span></a><span class="sd">        The size of the plot:</span>
+</span><span id="plot_psf-67"><a href="#plot_psf-67"><span class="linenos"> 67</span></a><span class="sd">        if plt_size is given, the function plots only the central square</span>
+</span><span id="plot_psf-68"><a href="#plot_psf-68"><span class="linenos"> 68</span></a><span class="sd">        with size = plt_size; otherwise it plots the whole array.</span>
+</span><span id="plot_psf-69"><a href="#plot_psf-69"><span class="linenos"> 69</span></a><span class="sd">    output : str, optional, default=None</span>
+</span><span id="plot_psf-70"><a href="#plot_psf-70"><span class="linenos"> 70</span></a><span class="sd">        The name of the output file:</span>
+</span><span id="plot_psf-71"><a href="#plot_psf-71"><span class="linenos"> 71</span></a><span class="sd">        if [output] is given, the function also saves the plot</span>
+</span><span id="plot_psf-72"><a href="#plot_psf-72"><span class="linenos"> 72</span></a><span class="sd">        with a filename [output].png; otherwise the plot is just shown.</span>
+</span><span id="plot_psf-73"><a href="#plot_psf-73"><span class="linenos"> 73</span></a><span class="sd">        </span>
+</span><span id="plot_psf-74"><a href="#plot_psf-74"><span class="linenos"> 74</span></a><span class="sd">    Returns</span>
+</span><span id="plot_psf-75"><a href="#plot_psf-75"><span class="linenos"> 75</span></a><span class="sd">    -------</span>
+</span><span id="plot_psf-76"><a href="#plot_psf-76"><span class="linenos"> 76</span></a><span class="sd">    Nothing</span>
+</span><span id="plot_psf-77"><a href="#plot_psf-77"><span class="linenos"> 77</span></a><span class="sd">         The function just shows the plot of PSF in 2D or 3D.</span>
+</span><span id="plot_psf-78"><a href="#plot_psf-78"><span class="linenos"> 78</span></a><span class="sd">    &#39;&#39;&#39;</span>
+</span><span id="plot_psf-79"><a href="#plot_psf-79"><span class="linenos"> 79</span></a>    <span class="c1"># Copy of arr variable</span>
+</span><span id="plot_psf-80"><a href="#plot_psf-80"><span class="linenos"> 80</span></a>    <span class="c1"># (in order not to change original array during (possible) resizing</span>
+</span><span id="plot_psf-81"><a href="#plot_psf-81"><span class="linenos"> 81</span></a>    <span class="n">arr2</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="plot_psf-82"><a href="#plot_psf-82"><span class="linenos"> 82</span></a>    <span class="c1"># Prepare variables</span>
+</span><span id="plot_psf-83"><a href="#plot_psf-83"><span class="linenos"> 83</span></a>    <span class="n">Xsize</span><span class="p">,</span><span class="n">Ysize</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span>
+</span><span id="plot_psf-84"><a href="#plot_psf-84"><span class="linenos"> 84</span></a>    <span class="n">xc</span><span class="p">,</span><span class="n">yc</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">Xsize</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">Ysize</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+</span><span id="plot_psf-85"><a href="#plot_psf-85"><span class="linenos"> 85</span></a>    <span class="c1"># Reduce array size for plotting, if required</span>
+</span><span id="plot_psf-86"><a href="#plot_psf-86"><span class="linenos"> 86</span></a>    <span class="c1"># (here we work with the array copy so as not to change to original</span>
+</span><span id="plot_psf-87"><a href="#plot_psf-87"><span class="linenos"> 87</span></a>    <span class="k">if</span> <span class="n">plt_size</span><span class="p">:</span>
+</span><span id="plot_psf-88"><a href="#plot_psf-88"><span class="linenos"> 88</span></a>        <span class="n">arr2</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span><span class="n">plt_size</span><span class="p">,</span><span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">)</span>
+</span><span id="plot_psf-89"><a href="#plot_psf-89"><span class="linenos"> 89</span></a>    <span class="k">if</span> <span class="n">plt_type</span><span class="o">==</span><span class="s1">&#39;2D&#39;</span><span class="p">:</span>
+</span><span id="plot_psf-90"><a href="#plot_psf-90"><span class="linenos"> 90</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">arr2</span><span class="p">)</span>
+</span><span id="plot_psf-91"><a href="#plot_psf-91"><span class="linenos"> 91</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+</span><span id="plot_psf-92"><a href="#plot_psf-92"><span class="linenos"> 92</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="plot_psf-93"><a href="#plot_psf-93"><span class="linenos"> 93</span></a>        <span class="c1"># Prepare meshgrid for 3D-plotting</span>
+</span><span id="plot_psf-94"><a href="#plot_psf-94"><span class="linenos"> 94</span></a>        <span class="n">Xsize</span><span class="p">,</span><span class="n">Ysize</span> <span class="o">=</span> <span class="n">arr2</span><span class="o">.</span><span class="n">shape</span>
+</span><span id="plot_psf-95"><a href="#plot_psf-95"><span class="linenos"> 95</span></a>        <span class="n">Xhalf</span><span class="p">,</span><span class="n">Yhalf</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">Xsize</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span><span class="nb">int</span><span class="p">(</span><span class="n">Ysize</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="plot_psf-96"><a href="#plot_psf-96"><span class="linenos"> 96</span></a>        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">Xhalf</span><span class="p">,</span><span class="n">Xhalf</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">Xsize</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="plot_psf-97"><a href="#plot_psf-97"><span class="linenos"> 97</span></a>        <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="n">Yhalf</span><span class="p">,</span><span class="n">Yhalf</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">Ysize</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="plot_psf-98"><a href="#plot_psf-98"><span class="linenos"> 98</span></a>        <span class="n">Xm</span><span class="p">,</span><span class="n">Ym</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)</span>
+</span><span id="plot_psf-99"><a href="#plot_psf-99"><span class="linenos"> 99</span></a>        <span class="c1"># Create 3D-plot</span>
+</span><span id="plot_psf-100"><a href="#plot_psf-100"><span class="linenos">100</span></a>        <span class="kn">from</span> <span class="nn">mpl_toolkits.mplot3d</span> <span class="kn">import</span> <span class="n">Axes3D</span>
+</span><span id="plot_psf-101"><a href="#plot_psf-101"><span class="linenos">101</span></a>        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+</span><span id="plot_psf-102"><a href="#plot_psf-102"><span class="linenos">102</span></a>        <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">)</span>
+</span><span id="plot_psf-103"><a href="#plot_psf-103"><span class="linenos">103</span></a>        <span class="n">ax</span><span class="o">.</span><span class="n">plot_surface</span><span class="p">(</span>
+</span><span id="plot_psf-104"><a href="#plot_psf-104"><span class="linenos">104</span></a>            <span class="n">Xm</span><span class="p">,</span><span class="n">Ym</span><span class="p">,</span><span class="n">arr2</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;coolwarm&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">antialiased</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span id="plot_psf-105"><a href="#plot_psf-105"><span class="linenos">105</span></a>        <span class="c1"># ADJUSTMENTS OF RANGE AND FORMAT OF Z-AXIS</span>
+</span><span id="plot_psf-106"><a href="#plot_psf-106"><span class="linenos">106</span></a>        <span class="c1"># (the following commands can be activated if necessary</span>
+</span><span id="plot_psf-107"><a href="#plot_psf-107"><span class="linenos">107</span></a>        <span class="c1"># (a) Define Z-scale</span>
+</span><span id="plot_psf-108"><a href="#plot_psf-108"><span class="linenos">108</span></a>        <span class="c1"># ax.set_zlim(0,12000)</span>
+</span><span id="plot_psf-109"><a href="#plot_psf-109"><span class="linenos">109</span></a>        <span class="c1"># (b) Separate thousands by comma</span>
+</span><span id="plot_psf-110"><a href="#plot_psf-110"><span class="linenos">110</span></a>        <span class="c1"># (according to https://stackoverflow.com/q/25973581</span>
+</span><span id="plot_psf-111"><a href="#plot_psf-111"><span class="linenos">111</span></a>        <span class="c1"># (extra number 8 in the format sets the size of number = 8 places</span>
+</span><span id="plot_psf-112"><a href="#plot_psf-112"><span class="linenos">112</span></a>        <span class="c1"># (this adds extra space in front of the number - offset from Z-axis</span>
+</span><span id="plot_psf-113"><a href="#plot_psf-113"><span class="linenos">113</span></a>        <span class="c1"># ax.zaxis.set_major_formatter(</span>
+</span><span id="plot_psf-114"><a href="#plot_psf-114"><span class="linenos">114</span></a>        <span class="c1">#     plt.matplotlib.ticker.StrMethodFormatter(&#39;{x:8,.0f}&#39;))       </span>
+</span><span id="plot_psf-115"><a href="#plot_psf-115"><span class="linenos">115</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</span><span id="plot_psf-116"><a href="#plot_psf-116"><span class="linenos">116</span></a>    <span class="c1"># Final output: show the plot (and save it, if it was requested)</span>
+</span><span id="plot_psf-117"><a href="#plot_psf-117"><span class="linenos">117</span></a>    <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="plot_psf-118"><a href="#plot_psf-118"><span class="linenos">118</span></a>    <span class="c1"># (if argument [output] was not given =&gt; just show the plot</span>
+</span><span id="plot_psf-119"><a href="#plot_psf-119"><span class="linenos">119</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span><span id="plot_psf-120"><a href="#plot_psf-120"><span class="linenos">120</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="plot_psf-121"><a href="#plot_psf-121"><span class="linenos">121</span></a>    <span class="c1"># (if argument [output] was given =&gt; save the plot and then show it</span>
+</span><span id="plot_psf-122"><a href="#plot_psf-122"><span class="linenos">122</span></a>    <span class="c1"># (it must be done in this order - because plt.show() clears the plot!</span>
+</span><span id="plot_psf-123"><a href="#plot_psf-123"><span class="linenos">123</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</span><span id="plot_psf-124"><a href="#plot_psf-124"><span class="linenos">124</span></a>        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Show plot of PSF function.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>arr</strong> (2D numpy array):
+The array with the saved 2D-PSF function, which represents
+the experimentally determined XY-spread of the primary beam.</li>
+<li><strong>plt_type</strong> (string):
+Either '2D' or '3D' - type of the plot.</li>
+<li><strong>plt_size</strong> (integer, optional, default=None):
+The size of the plot:
+if plt_size is given, the function plots only the central square
+with size = plt_size; otherwise it plots the whole array.</li>
+<li><strong>output</strong> (str, optional, default=None):
+The name of the output file:
+if [output] is given, the function also saves the plot
+with a filename [output].png; otherwise the plot is just shown.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>Nothing</strong>: The function just shows the plot of PSF in 2D or 3D.</li>
+</ul>
+</div>
+
+
+                </section>
+                <section id="circular_mask">
+                            <input id="circular_mask-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">circular_mask</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">w</span>, </span><span class="param"><span class="n">h</span>, </span><span class="param"><span class="n">center</span><span class="o">=</span><span class="kc">None</span>, </span><span class="param"><span class="n">radius</span><span class="o">=</span><span class="kc">None</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="circular_mask-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#circular_mask"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="circular_mask-126"><a href="#circular_mask-126"><span class="linenos">126</span></a><span class="k">def</span> <span class="nf">circular_mask</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span id="circular_mask-127"><a href="#circular_mask-127"><span class="linenos">127</span></a>    <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="circular_mask-128"><a href="#circular_mask-128"><span class="linenos">128</span></a><span class="sd">    Create a circular mask for rectangular array</span>
+</span><span id="circular_mask-129"><a href="#circular_mask-129"><span class="linenos">129</span></a>
+</span><span id="circular_mask-130"><a href="#circular_mask-130"><span class="linenos">130</span></a><span class="sd">    Parameters</span>
+</span><span id="circular_mask-131"><a href="#circular_mask-131"><span class="linenos">131</span></a><span class="sd">    ----------</span>
+</span><span id="circular_mask-132"><a href="#circular_mask-132"><span class="linenos">132</span></a><span class="sd">    h : int</span>
+</span><span id="circular_mask-133"><a href="#circular_mask-133"><span class="linenos">133</span></a><span class="sd">        Height of the array.</span>
+</span><span id="circular_mask-134"><a href="#circular_mask-134"><span class="linenos">134</span></a><span class="sd">    w : int</span>
+</span><span id="circular_mask-135"><a href="#circular_mask-135"><span class="linenos">135</span></a><span class="sd">        Width of the array.</span>
+</span><span id="circular_mask-136"><a href="#circular_mask-136"><span class="linenos">136</span></a><span class="sd">    center : list or tuple of two integers, optional, default is None</span>
+</span><span id="circular_mask-137"><a href="#circular_mask-137"><span class="linenos">137</span></a><span class="sd">        Center of the mask.</span>
+</span><span id="circular_mask-138"><a href="#circular_mask-138"><span class="linenos">138</span></a><span class="sd">        If None, center will be a geometric center of array.</span>
+</span><span id="circular_mask-139"><a href="#circular_mask-139"><span class="linenos">139</span></a><span class="sd">    radius : int, optional, default is None</span>
+</span><span id="circular_mask-140"><a href="#circular_mask-140"><span class="linenos">140</span></a><span class="sd">        Radius of the mask.</span>
+</span><span id="circular_mask-141"><a href="#circular_mask-141"><span class="linenos">141</span></a><span class="sd">        If None, radius will be the distance to the shorter array wall. </span>
+</span><span id="circular_mask-142"><a href="#circular_mask-142"><span class="linenos">142</span></a>
+</span><span id="circular_mask-143"><a href="#circular_mask-143"><span class="linenos">143</span></a><span class="sd">    Returns</span>
+</span><span id="circular_mask-144"><a href="#circular_mask-144"><span class="linenos">144</span></a><span class="sd">    -------</span>
+</span><span id="circular_mask-145"><a href="#circular_mask-145"><span class="linenos">145</span></a><span class="sd">    mask : 2D-array of bool values</span>
+</span><span id="circular_mask-146"><a href="#circular_mask-146"><span class="linenos">146</span></a><span class="sd">        Circular mask: arr * mask = arr with zero values outside the mask.</span>
+</span><span id="circular_mask-147"><a href="#circular_mask-147"><span class="linenos">147</span></a><span class="sd">        </span>
+</span><span id="circular_mask-148"><a href="#circular_mask-148"><span class="linenos">148</span></a><span class="sd">    Note</span>
+</span><span id="circular_mask-149"><a href="#circular_mask-149"><span class="linenos">149</span></a><span class="sd">    ----</span>
+</span><span id="circular_mask-150"><a href="#circular_mask-150"><span class="linenos">150</span></a><span class="sd">    Copy+pasted and slightly modified from www.</span>
+</span><span id="circular_mask-151"><a href="#circular_mask-151"><span class="linenos">151</span></a><span class="sd">    GoogleSearch: numpy create circular mask on rectangular array</span>
+</span><span id="circular_mask-152"><a href="#circular_mask-152"><span class="linenos">152</span></a><span class="sd">    https://stackoverflow.com/q/44865023</span>
+</span><span id="circular_mask-153"><a href="#circular_mask-153"><span class="linenos">153</span></a><span class="sd">    &#39;&#39;&#39;</span>
+</span><span id="circular_mask-154"><a href="#circular_mask-154"><span class="linenos">154</span></a>    <span class="c1"># Determine center and radius, if arguments were None.</span>
+</span><span id="circular_mask-155"><a href="#circular_mask-155"><span class="linenos">155</span></a>    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> 
+</span><span id="circular_mask-156"><a href="#circular_mask-156"><span class="linenos">156</span></a>        <span class="c1"># use the middle of the image</span>
+</span><span id="circular_mask-157"><a href="#circular_mask-157"><span class="linenos">157</span></a>        <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">h</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">w</span><span class="o">/</span><span class="mi">2</span><span class="p">))</span>
+</span><span id="circular_mask-158"><a href="#circular_mask-158"><span class="linenos">158</span></a>    <span class="k">if</span> <span class="n">radius</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="circular_mask-159"><a href="#circular_mask-159"><span class="linenos">159</span></a>        <span class="c1"># use the smallest distance between the center and image walls</span>
+</span><span id="circular_mask-160"><a href="#circular_mask-160"><span class="linenos">160</span></a>        <span class="n">radius</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">h</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">w</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span id="circular_mask-161"><a href="#circular_mask-161"><span class="linenos">161</span></a>    <span class="c1"># Create orthogonal grid and calculate distance from center</span>
+</span><span id="circular_mask-162"><a href="#circular_mask-162"><span class="linenos">162</span></a>    <span class="c1"># (exmplanation =&gt; https://stackoverflow.com/q/44865023</span>
+</span><span id="circular_mask-163"><a href="#circular_mask-163"><span class="linenos">163</span></a>    <span class="n">Y</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ogrid</span><span class="p">[:</span><span class="n">w</span><span class="p">,</span> <span class="p">:</span><span class="n">h</span><span class="p">]</span>
+</span><span id="circular_mask-164"><a href="#circular_mask-164"><span class="linenos">164</span></a>    <span class="n">dist_from_center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">X</span> <span class="o">-</span> <span class="n">center</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">Y</span><span class="o">-</span><span class="n">center</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="circular_mask-165"><a href="#circular_mask-165"><span class="linenos">165</span></a>    <span class="c1"># Calculate mask</span>
+</span><span id="circular_mask-166"><a href="#circular_mask-166"><span class="linenos">166</span></a>    <span class="c1"># (explanation =&gt; https://stackoverflow.com/q/44865023</span>
+</span><span id="circular_mask-167"><a href="#circular_mask-167"><span class="linenos">167</span></a>    <span class="n">mask</span> <span class="o">=</span> <span class="n">dist_from_center</span> <span class="o">&lt;=</span> <span class="n">radius</span>
+</span><span id="circular_mask-168"><a href="#circular_mask-168"><span class="linenos">168</span></a>    <span class="c1"># Return the mask</span>
+</span><span id="circular_mask-169"><a href="#circular_mask-169"><span class="linenos">169</span></a>    <span class="c1"># (2D-boolean array to modify original array</span>
+</span><span id="circular_mask-170"><a href="#circular_mask-170"><span class="linenos">170</span></a>    <span class="c1"># (arr * mask = array with zero values outsid the mask</span>
+</span><span id="circular_mask-171"><a href="#circular_mask-171"><span class="linenos">171</span></a>    <span class="k">return</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Create a circular mask for rectangular array</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>h</strong> (int):
+Height of the array.</li>
+<li><strong>w</strong> (int):
+Width of the array.</li>
+<li><strong>center</strong> (list or tuple of two integers, optional, default is None):
+Center of the mask.
+If None, center will be a geometric center of array.</li>
+<li><strong>radius</strong> (int, optional, default is None):
+Radius of the mask.
+If None, radius will be the distance to the shorter array wall.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>mask</strong> (2D-array of bool values):
+Circular mask: arr * mask = arr with zero values outside the mask.</li>
+</ul>
+
+<h6 id="note">Note</h6>
+
+<p>Copy+pasted and slightly modified from www.
+GoogleSearch: numpy create circular mask on rectangular array
+<a href="https://stackoverflow.com/q/44865023">https://stackoverflow.com/q/44865023</a></p>
+</div>
+
+
+                </section>
+                <section id="PSFtype1">
+                            <input id="PSFtype1-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">PSFtype1</span>:
+
+                <label class="view-source-button" for="PSFtype1-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#PSFtype1"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="PSFtype1-173"><a href="#PSFtype1-173"><span class="linenos">173</span></a><span class="k">class</span> <span class="nc">PSFtype1</span><span class="p">:</span>
+</span><span id="PSFtype1-174"><a href="#PSFtype1-174"><span class="linenos">174</span></a>    
+</span><span id="PSFtype1-175"><a href="#PSFtype1-175"><span class="linenos">175</span></a>    <span class="k">def</span> <span class="nf">get_psf</span><span class="p">(</span><span class="n">SDATA</span><span class="p">,</span> <span class="n">DIFFIMAGES</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</span><span id="PSFtype1-176"><a href="#PSFtype1-176"><span class="linenos">176</span></a>        <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="PSFtype1-177"><a href="#PSFtype1-177"><span class="linenos">177</span></a><span class="sd">        Get PSF of type1 = estimated from datafiles with low/no diffractions.</span>
+</span><span id="PSFtype1-178"><a href="#PSFtype1-178"><span class="linenos">178</span></a>
+</span><span id="PSFtype1-179"><a href="#PSFtype1-179"><span class="linenos">179</span></a><span class="sd">        Parameters</span>
+</span><span id="PSFtype1-180"><a href="#PSFtype1-180"><span class="linenos">180</span></a><span class="sd">        ----------</span>
+</span><span id="PSFtype1-181"><a href="#PSFtype1-181"><span class="linenos">181</span></a><span class="sd">        SDATA : stemdiff.gvars.SourceData object</span>
+</span><span id="PSFtype1-182"><a href="#PSFtype1-182"><span class="linenos">182</span></a><span class="sd">            The object describes source data (detector, data_dir, filenames).</span>
+</span><span id="PSFtype1-183"><a href="#PSFtype1-183"><span class="linenos">183</span></a><span class="sd">        DIFFIMAGES : stemdiff.gvars.DiffImages object</span>
+</span><span id="PSFtype1-184"><a href="#PSFtype1-184"><span class="linenos">184</span></a><span class="sd">            Object describing the diffraction images/patterns.</span>
+</span><span id="PSFtype1-185"><a href="#PSFtype1-185"><span class="linenos">185</span></a><span class="sd">        df : pandas.DataFrame object</span>
+</span><span id="PSFtype1-186"><a href="#PSFtype1-186"><span class="linenos">186</span></a><span class="sd">            Database with datafile names and characteristics.</span>
+</span><span id="PSFtype1-187"><a href="#PSFtype1-187"><span class="linenos">187</span></a><span class="sd">            PSF is estimated from the files included in this database.</span>
+</span><span id="PSFtype1-188"><a href="#PSFtype1-188"><span class="linenos">188</span></a><span class="sd">            Typically, df is a sub-database containing low-diffracting files.</span>
+</span><span id="PSFtype1-189"><a href="#PSFtype1-189"><span class="linenos">189</span></a><span class="sd">        circular : bool, optional, default is False</span>
+</span><span id="PSFtype1-190"><a href="#PSFtype1-190"><span class="linenos">190</span></a><span class="sd">            If True, apply circular mask - change square PSF to circular PSF.</span>
+</span><span id="PSFtype1-191"><a href="#PSFtype1-191"><span class="linenos">191</span></a><span class="sd">            </span>
+</span><span id="PSFtype1-192"><a href="#PSFtype1-192"><span class="linenos">192</span></a><span class="sd">        Returns</span>
+</span><span id="PSFtype1-193"><a href="#PSFtype1-193"><span class="linenos">193</span></a><span class="sd">        -------</span>
+</span><span id="PSFtype1-194"><a href="#PSFtype1-194"><span class="linenos">194</span></a><span class="sd">        psf : 2D-numpy array</span>
+</span><span id="PSFtype1-195"><a href="#PSFtype1-195"><span class="linenos">195</span></a><span class="sd">            The array represents estimate of experimental PSF.</span>
+</span><span id="PSFtype1-196"><a href="#PSFtype1-196"><span class="linenos">196</span></a><span class="sd">        &#39;&#39;&#39;</span>
+</span><span id="PSFtype1-197"><a href="#PSFtype1-197"><span class="linenos">197</span></a>        <span class="c1"># (0) Prepare variables</span>
+</span><span id="PSFtype1-198"><a href="#PSFtype1-198"><span class="linenos">198</span></a>        <span class="n">file_counter</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="PSFtype1-199"><a href="#PSFtype1-199"><span class="linenos">199</span></a>        <span class="n">R</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">upscale</span>
+</span><span id="PSFtype1-200"><a href="#PSFtype1-200"><span class="linenos">200</span></a>        <span class="n">det_size</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">detector_size</span>
+</span><span id="PSFtype1-201"><a href="#PSFtype1-201"><span class="linenos">201</span></a>        <span class="n">psf_size</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">psfsize</span>
+</span><span id="PSFtype1-202"><a href="#PSFtype1-202"><span class="linenos">202</span></a>        <span class="c1"># (1) Prepare empty array for PSF calculation</span>
+</span><span id="PSFtype1-203"><a href="#PSFtype1-203"><span class="linenos">203</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype1-204"><a href="#PSFtype1-204"><span class="linenos">204</span></a>        <span class="k">if</span> <span class="n">psf_size</span><span class="p">:</span>
+</span><span id="PSFtype1-205"><a href="#PSFtype1-205"><span class="linenos">205</span></a>            <span class="n">psf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype1-206"><a href="#PSFtype1-206"><span class="linenos">206</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="PSFtype1-207"><a href="#PSFtype1-207"><span class="linenos">207</span></a>            <span class="n">psf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype1-208"><a href="#PSFtype1-208"><span class="linenos">208</span></a>        <span class="c1"># (2) Go through the files and calculate average PSF out of them</span>
+</span><span id="PSFtype1-209"><a href="#PSFtype1-209"><span class="linenos">209</span></a>        <span class="k">for</span> <span class="n">index</span><span class="p">,</span><span class="n">datafile</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+</span><span id="PSFtype1-210"><a href="#PSFtype1-210"><span class="linenos">210</span></a>            <span class="c1"># (a) Read datafile to array and increase file_counter</span>
+</span><span id="PSFtype1-211"><a href="#PSFtype1-211"><span class="linenos">211</span></a>            <span class="n">file_to_read</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">datafile</span><span class="o">.</span><span class="n">DatafileName</span><span class="p">)</span>
+</span><span id="PSFtype1-212"><a href="#PSFtype1-212"><span class="linenos">212</span></a>            <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Datafiles</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SDATA</span><span class="p">,</span> <span class="n">file_to_read</span><span class="p">)</span>
+</span><span id="PSFtype1-213"><a href="#PSFtype1-213"><span class="linenos">213</span></a>            <span class="n">file_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="PSFtype1-214"><a href="#PSFtype1-214"><span class="linenos">214</span></a>            <span class="c1"># (b) Rescale array</span>
+</span><span id="PSFtype1-215"><a href="#PSFtype1-215"><span class="linenos">215</span></a>            <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</span><span id="PSFtype1-216"><a href="#PSFtype1-216"><span class="linenos">216</span></a>            <span class="c1"># (c) Remove edges if psf_size is given</span>
+</span><span id="PSFtype1-217"><a href="#PSFtype1-217"><span class="linenos">217</span></a>            <span class="k">if</span> <span class="n">psf_size</span><span class="p">:</span>
+</span><span id="PSFtype1-218"><a href="#PSFtype1-218"><span class="linenos">218</span></a>                <span class="n">xc</span><span class="p">,</span><span class="n">yc</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">find_center</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+</span><span id="PSFtype1-219"><a href="#PSFtype1-219"><span class="linenos">219</span></a>                    <span class="n">csquare</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">csquare</span><span class="o">*</span><span class="n">R</span><span class="p">,</span>
+</span><span id="PSFtype1-220"><a href="#PSFtype1-220"><span class="linenos">220</span></a>                    <span class="n">cintensity</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">cintensity</span><span class="p">)</span>
+</span><span id="PSFtype1-221"><a href="#PSFtype1-221"><span class="linenos">221</span></a>                <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+</span><span id="PSFtype1-222"><a href="#PSFtype1-222"><span class="linenos">222</span></a>                    <span class="n">rsize</span> <span class="o">=</span> <span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">xc</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">xc</span><span class="p">),</span> <span class="n">yc</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">yc</span><span class="p">))</span>
+</span><span id="PSFtype1-223"><a href="#PSFtype1-223"><span class="linenos">223</span></a>                <span class="n">psf</span> <span class="o">+=</span> <span class="n">arr</span>
+</span><span id="PSFtype1-224"><a href="#PSFtype1-224"><span class="linenos">224</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="PSFtype1-225"><a href="#PSFtype1-225"><span class="linenos">225</span></a>                <span class="n">psf</span> <span class="o">+=</span> <span class="n">arr</span>
+</span><span id="PSFtype1-226"><a href="#PSFtype1-226"><span class="linenos">226</span></a>        <span class="c1"># (3) Calculate final experimental PSF</span>
+</span><span id="PSFtype1-227"><a href="#PSFtype1-227"><span class="linenos">227</span></a>        <span class="c1"># (divide sum by no_of_summed_files in order to get reasonable values</span>
+</span><span id="PSFtype1-228"><a href="#PSFtype1-228"><span class="linenos">228</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">psf</span><span class="o">/</span><span class="n">file_counter</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+</span><span id="PSFtype1-229"><a href="#PSFtype1-229"><span class="linenos">229</span></a>        <span class="c1"># (4) Return final experimental PSF</span>
+</span><span id="PSFtype1-230"><a href="#PSFtype1-230"><span class="linenos">230</span></a>        <span class="k">return</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span></pre></div>
+
+
+    
+
+                            <div id="PSFtype1.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">PSFtype1</span><span class="signature pdoc-code condensed">()</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PSFtype1.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="PSFtype1.get_psf" class="classattr">
+                                        <input id="PSFtype1.get_psf-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_psf</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">SDATA</span>, </span><span class="param"><span class="n">DIFFIMAGES</span>, </span><span class="param"><span class="n">df</span>, </span><span class="param"><span class="n">circular</span><span class="o">=</span><span class="kc">False</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="PSFtype1.get_psf-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#PSFtype1.get_psf"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="PSFtype1.get_psf-175"><a href="#PSFtype1.get_psf-175"><span class="linenos">175</span></a>    <span class="k">def</span> <span class="nf">get_psf</span><span class="p">(</span><span class="n">SDATA</span><span class="p">,</span> <span class="n">DIFFIMAGES</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</span><span id="PSFtype1.get_psf-176"><a href="#PSFtype1.get_psf-176"><span class="linenos">176</span></a>        <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="PSFtype1.get_psf-177"><a href="#PSFtype1.get_psf-177"><span class="linenos">177</span></a><span class="sd">        Get PSF of type1 = estimated from datafiles with low/no diffractions.</span>
+</span><span id="PSFtype1.get_psf-178"><a href="#PSFtype1.get_psf-178"><span class="linenos">178</span></a>
+</span><span id="PSFtype1.get_psf-179"><a href="#PSFtype1.get_psf-179"><span class="linenos">179</span></a><span class="sd">        Parameters</span>
+</span><span id="PSFtype1.get_psf-180"><a href="#PSFtype1.get_psf-180"><span class="linenos">180</span></a><span class="sd">        ----------</span>
+</span><span id="PSFtype1.get_psf-181"><a href="#PSFtype1.get_psf-181"><span class="linenos">181</span></a><span class="sd">        SDATA : stemdiff.gvars.SourceData object</span>
+</span><span id="PSFtype1.get_psf-182"><a href="#PSFtype1.get_psf-182"><span class="linenos">182</span></a><span class="sd">            The object describes source data (detector, data_dir, filenames).</span>
+</span><span id="PSFtype1.get_psf-183"><a href="#PSFtype1.get_psf-183"><span class="linenos">183</span></a><span class="sd">        DIFFIMAGES : stemdiff.gvars.DiffImages object</span>
+</span><span id="PSFtype1.get_psf-184"><a href="#PSFtype1.get_psf-184"><span class="linenos">184</span></a><span class="sd">            Object describing the diffraction images/patterns.</span>
+</span><span id="PSFtype1.get_psf-185"><a href="#PSFtype1.get_psf-185"><span class="linenos">185</span></a><span class="sd">        df : pandas.DataFrame object</span>
+</span><span id="PSFtype1.get_psf-186"><a href="#PSFtype1.get_psf-186"><span class="linenos">186</span></a><span class="sd">            Database with datafile names and characteristics.</span>
+</span><span id="PSFtype1.get_psf-187"><a href="#PSFtype1.get_psf-187"><span class="linenos">187</span></a><span class="sd">            PSF is estimated from the files included in this database.</span>
+</span><span id="PSFtype1.get_psf-188"><a href="#PSFtype1.get_psf-188"><span class="linenos">188</span></a><span class="sd">            Typically, df is a sub-database containing low-diffracting files.</span>
+</span><span id="PSFtype1.get_psf-189"><a href="#PSFtype1.get_psf-189"><span class="linenos">189</span></a><span class="sd">        circular : bool, optional, default is False</span>
+</span><span id="PSFtype1.get_psf-190"><a href="#PSFtype1.get_psf-190"><span class="linenos">190</span></a><span class="sd">            If True, apply circular mask - change square PSF to circular PSF.</span>
+</span><span id="PSFtype1.get_psf-191"><a href="#PSFtype1.get_psf-191"><span class="linenos">191</span></a><span class="sd">            </span>
+</span><span id="PSFtype1.get_psf-192"><a href="#PSFtype1.get_psf-192"><span class="linenos">192</span></a><span class="sd">        Returns</span>
+</span><span id="PSFtype1.get_psf-193"><a href="#PSFtype1.get_psf-193"><span class="linenos">193</span></a><span class="sd">        -------</span>
+</span><span id="PSFtype1.get_psf-194"><a href="#PSFtype1.get_psf-194"><span class="linenos">194</span></a><span class="sd">        psf : 2D-numpy array</span>
+</span><span id="PSFtype1.get_psf-195"><a href="#PSFtype1.get_psf-195"><span class="linenos">195</span></a><span class="sd">            The array represents estimate of experimental PSF.</span>
+</span><span id="PSFtype1.get_psf-196"><a href="#PSFtype1.get_psf-196"><span class="linenos">196</span></a><span class="sd">        &#39;&#39;&#39;</span>
+</span><span id="PSFtype1.get_psf-197"><a href="#PSFtype1.get_psf-197"><span class="linenos">197</span></a>        <span class="c1"># (0) Prepare variables</span>
+</span><span id="PSFtype1.get_psf-198"><a href="#PSFtype1.get_psf-198"><span class="linenos">198</span></a>        <span class="n">file_counter</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="PSFtype1.get_psf-199"><a href="#PSFtype1.get_psf-199"><span class="linenos">199</span></a>        <span class="n">R</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">upscale</span>
+</span><span id="PSFtype1.get_psf-200"><a href="#PSFtype1.get_psf-200"><span class="linenos">200</span></a>        <span class="n">det_size</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">detector</span><span class="o">.</span><span class="n">detector_size</span>
+</span><span id="PSFtype1.get_psf-201"><a href="#PSFtype1.get_psf-201"><span class="linenos">201</span></a>        <span class="n">psf_size</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">psfsize</span>
+</span><span id="PSFtype1.get_psf-202"><a href="#PSFtype1.get_psf-202"><span class="linenos">202</span></a>        <span class="c1"># (1) Prepare empty array for PSF calculation</span>
+</span><span id="PSFtype1.get_psf-203"><a href="#PSFtype1.get_psf-203"><span class="linenos">203</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-204"><a href="#PSFtype1.get_psf-204"><span class="linenos">204</span></a>        <span class="k">if</span> <span class="n">psf_size</span><span class="p">:</span>
+</span><span id="PSFtype1.get_psf-205"><a href="#PSFtype1.get_psf-205"><span class="linenos">205</span></a>            <span class="n">psf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-206"><a href="#PSFtype1.get_psf-206"><span class="linenos">206</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="PSFtype1.get_psf-207"><a href="#PSFtype1.get_psf-207"><span class="linenos">207</span></a>            <span class="n">psf</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">det_size</span><span class="o">*</span><span class="n">R</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-208"><a href="#PSFtype1.get_psf-208"><span class="linenos">208</span></a>        <span class="c1"># (2) Go through the files and calculate average PSF out of them</span>
+</span><span id="PSFtype1.get_psf-209"><a href="#PSFtype1.get_psf-209"><span class="linenos">209</span></a>        <span class="k">for</span> <span class="n">index</span><span class="p">,</span><span class="n">datafile</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+</span><span id="PSFtype1.get_psf-210"><a href="#PSFtype1.get_psf-210"><span class="linenos">210</span></a>            <span class="c1"># (a) Read datafile to array and increase file_counter</span>
+</span><span id="PSFtype1.get_psf-211"><a href="#PSFtype1.get_psf-211"><span class="linenos">211</span></a>            <span class="n">file_to_read</span> <span class="o">=</span> <span class="n">SDATA</span><span class="o">.</span><span class="n">data_dir</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="n">datafile</span><span class="o">.</span><span class="n">DatafileName</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-212"><a href="#PSFtype1.get_psf-212"><span class="linenos">212</span></a>            <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Datafiles</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">SDATA</span><span class="p">,</span> <span class="n">file_to_read</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-213"><a href="#PSFtype1.get_psf-213"><span class="linenos">213</span></a>            <span class="n">file_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="PSFtype1.get_psf-214"><a href="#PSFtype1.get_psf-214"><span class="linenos">214</span></a>            <span class="c1"># (b) Rescale array</span>
+</span><span id="PSFtype1.get_psf-215"><a href="#PSFtype1.get_psf-215"><span class="linenos">215</span></a>            <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-216"><a href="#PSFtype1.get_psf-216"><span class="linenos">216</span></a>            <span class="c1"># (c) Remove edges if psf_size is given</span>
+</span><span id="PSFtype1.get_psf-217"><a href="#PSFtype1.get_psf-217"><span class="linenos">217</span></a>            <span class="k">if</span> <span class="n">psf_size</span><span class="p">:</span>
+</span><span id="PSFtype1.get_psf-218"><a href="#PSFtype1.get_psf-218"><span class="linenos">218</span></a>                <span class="n">xc</span><span class="p">,</span><span class="n">yc</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">find_center</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+</span><span id="PSFtype1.get_psf-219"><a href="#PSFtype1.get_psf-219"><span class="linenos">219</span></a>                    <span class="n">csquare</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">csquare</span><span class="o">*</span><span class="n">R</span><span class="p">,</span>
+</span><span id="PSFtype1.get_psf-220"><a href="#PSFtype1.get_psf-220"><span class="linenos">220</span></a>                    <span class="n">cintensity</span> <span class="o">=</span> <span class="n">DIFFIMAGES</span><span class="o">.</span><span class="n">cintensity</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-221"><a href="#PSFtype1.get_psf-221"><span class="linenos">221</span></a>                <span class="n">arr</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span>
+</span><span id="PSFtype1.get_psf-222"><a href="#PSFtype1.get_psf-222"><span class="linenos">222</span></a>                    <span class="n">rsize</span> <span class="o">=</span> <span class="n">psf_size</span><span class="o">*</span><span class="n">R</span><span class="p">,</span> <span class="n">xc</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">xc</span><span class="p">),</span> <span class="n">yc</span><span class="o">=</span><span class="nb">round</span><span class="p">(</span><span class="n">yc</span><span class="p">))</span>
+</span><span id="PSFtype1.get_psf-223"><a href="#PSFtype1.get_psf-223"><span class="linenos">223</span></a>                <span class="n">psf</span> <span class="o">+=</span> <span class="n">arr</span>
+</span><span id="PSFtype1.get_psf-224"><a href="#PSFtype1.get_psf-224"><span class="linenos">224</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="PSFtype1.get_psf-225"><a href="#PSFtype1.get_psf-225"><span class="linenos">225</span></a>                <span class="n">psf</span> <span class="o">+=</span> <span class="n">arr</span>
+</span><span id="PSFtype1.get_psf-226"><a href="#PSFtype1.get_psf-226"><span class="linenos">226</span></a>        <span class="c1"># (3) Calculate final experimental PSF</span>
+</span><span id="PSFtype1.get_psf-227"><a href="#PSFtype1.get_psf-227"><span class="linenos">227</span></a>        <span class="c1"># (divide sum by no_of_summed_files in order to get reasonable values</span>
+</span><span id="PSFtype1.get_psf-228"><a href="#PSFtype1.get_psf-228"><span class="linenos">228</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">psf</span><span class="o">/</span><span class="n">file_counter</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+</span><span id="PSFtype1.get_psf-229"><a href="#PSFtype1.get_psf-229"><span class="linenos">229</span></a>        <span class="c1"># (4) Return final experimental PSF</span>
+</span><span id="PSFtype1.get_psf-230"><a href="#PSFtype1.get_psf-230"><span class="linenos">230</span></a>        <span class="k">return</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Get PSF of type1 = estimated from datafiles with low/no diffractions.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>SDATA</strong> (stemdiff.gvars.SourceData object):
+The object describes source data (detector, data_dir, filenames).</li>
+<li><strong>DIFFIMAGES</strong> (stemdiff.gvars.DiffImages object):
+Object describing the diffraction images/patterns.</li>
+<li><strong>df</strong> (pandas.DataFrame object):
+Database with datafile names and characteristics.
+PSF is estimated from the files included in this database.
+Typically, df is a sub-database containing low-diffracting files.</li>
+<li><strong>circular</strong> (bool, optional, default is False):
+If True, apply circular mask - change square PSF to circular PSF.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>psf</strong> (2D-numpy array):
+The array represents estimate of experimental PSF.</li>
+</ul>
+</div>
+
+
+                            </div>
+                </section>
+                <section id="PSFtype2">
+                            <input id="PSFtype2-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr class">
+            
+    <span class="def">class</span>
+    <span class="name">PSFtype2</span>:
+
+                <label class="view-source-button" for="PSFtype2-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#PSFtype2"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="PSFtype2-232"><a href="#PSFtype2-232"><span class="linenos">232</span></a><span class="k">class</span> <span class="nc">PSFtype2</span><span class="p">:</span>
+</span><span id="PSFtype2-233"><a href="#PSFtype2-233"><span class="linenos">233</span></a>    
+</span><span id="PSFtype2-234"><a href="#PSFtype2-234"><span class="linenos">234</span></a>    <span class="k">def</span> <span class="nf">get_psf</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</span><span id="PSFtype2-235"><a href="#PSFtype2-235"><span class="linenos">235</span></a>        <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="PSFtype2-236"><a href="#PSFtype2-236"><span class="linenos">236</span></a><span class="sd">        Get PSF of type2 = estimated from a small central region.</span>
+</span><span id="PSFtype2-237"><a href="#PSFtype2-237"><span class="linenos">237</span></a>
+</span><span id="PSFtype2-238"><a href="#PSFtype2-238"><span class="linenos">238</span></a><span class="sd">        Parameters</span>
+</span><span id="PSFtype2-239"><a href="#PSFtype2-239"><span class="linenos">239</span></a><span class="sd">        ----------</span>
+</span><span id="PSFtype2-240"><a href="#PSFtype2-240"><span class="linenos">240</span></a><span class="sd">        arr : 2D-numpy array</span>
+</span><span id="PSFtype2-241"><a href="#PSFtype2-241"><span class="linenos">241</span></a><span class="sd">            The array/datafile, from which the PSF is to be determined.</span>
+</span><span id="PSFtype2-242"><a href="#PSFtype2-242"><span class="linenos">242</span></a><span class="sd">            The array is a square with geometrical center = intensity center.</span>
+</span><span id="PSFtype2-243"><a href="#PSFtype2-243"><span class="linenos">243</span></a><span class="sd">            See *Technical notes* below for more details and consequences.</span>
+</span><span id="PSFtype2-244"><a href="#PSFtype2-244"><span class="linenos">244</span></a><span class="sd">        psf_size : int</span>
+</span><span id="PSFtype2-245"><a href="#PSFtype2-245"><span class="linenos">245</span></a><span class="sd">            The size/diameter of PSF function to be determined.</span>
+</span><span id="PSFtype2-246"><a href="#PSFtype2-246"><span class="linenos">246</span></a><span class="sd">        circular : bool, optional, default is False</span>
+</span><span id="PSFtype2-247"><a href="#PSFtype2-247"><span class="linenos">247</span></a><span class="sd">            If True, apply circular mask - change square PSF to circular PSF.</span>
+</span><span id="PSFtype2-248"><a href="#PSFtype2-248"><span class="linenos">248</span></a><span class="sd">            </span>
+</span><span id="PSFtype2-249"><a href="#PSFtype2-249"><span class="linenos">249</span></a><span class="sd">        Returns</span>
+</span><span id="PSFtype2-250"><a href="#PSFtype2-250"><span class="linenos">250</span></a><span class="sd">        -------</span>
+</span><span id="PSFtype2-251"><a href="#PSFtype2-251"><span class="linenos">251</span></a><span class="sd">        psf : 2D-numpy array</span>
+</span><span id="PSFtype2-252"><a href="#PSFtype2-252"><span class="linenos">252</span></a><span class="sd">            The array represents estimate of experimental PSF.</span>
+</span><span id="PSFtype2-253"><a href="#PSFtype2-253"><span class="linenos">253</span></a>
+</span><span id="PSFtype2-254"><a href="#PSFtype2-254"><span class="linenos">254</span></a><span class="sd">        Technical notes</span>
+</span><span id="PSFtype2-255"><a href="#PSFtype2-255"><span class="linenos">255</span></a><span class="sd">        --------------</span>
+</span><span id="PSFtype2-256"><a href="#PSFtype2-256"><span class="linenos">256</span></a><span class="sd">        In our algorithm, we send a square centered array to this function.</span>
+</span><span id="PSFtype2-257"><a href="#PSFtype2-257"><span class="linenos">257</span></a><span class="sd">        This means that intensity center = geometric center of the array.</span>
+</span><span id="PSFtype2-258"><a href="#PSFtype2-258"><span class="linenos">258</span></a><span class="sd">        Consequence: we do not have to determine intensity center</span>
+</span><span id="PSFtype2-259"><a href="#PSFtype2-259"><span class="linenos">259</span></a><span class="sd">        and waste time - it is enough to calculate geometrical center.</span>
+</span><span id="PSFtype2-260"><a href="#PSFtype2-260"><span class="linenos">260</span></a><span class="sd">        &#39;&#39;&#39;</span>
+</span><span id="PSFtype2-261"><a href="#PSFtype2-261"><span class="linenos">261</span></a>        <span class="c1"># Get center</span>
+</span><span id="PSFtype2-262"><a href="#PSFtype2-262"><span class="linenos">262</span></a>        <span class="c1"># (just geometrical center as explained in the docstring</span>
+</span><span id="PSFtype2-263"><a href="#PSFtype2-263"><span class="linenos">263</span></a>        <span class="n">xc</span> <span class="o">=</span> <span class="n">yc</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+</span><span id="PSFtype2-264"><a href="#PSFtype2-264"><span class="linenos">264</span></a>        <span class="c1"># Remove edges</span>
+</span><span id="PSFtype2-265"><a href="#PSFtype2-265"><span class="linenos">265</span></a>        <span class="c1"># (leave only central square with psf_size </span>
+</span><span id="PSFtype2-266"><a href="#PSFtype2-266"><span class="linenos">266</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">,</span> <span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">)</span>
+</span><span id="PSFtype2-267"><a href="#PSFtype2-267"><span class="linenos">267</span></a>        <span class="c1"># Remove background</span>
+</span><span id="PSFtype2-268"><a href="#PSFtype2-268"><span class="linenos">268</span></a>        <span class="c1"># (PSF is from the center, it &quot;sits&quot; on some background intensity</span>
+</span><span id="PSFtype2-269"><a href="#PSFtype2-269"><span class="linenos">269</span></a>        <span class="c1"># !!! Convert PSF from uint to float - uint fails for negative values!</span>
+</span><span id="PSFtype2-270"><a href="#PSFtype2-270"><span class="linenos">270</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype2-271"><a href="#PSFtype2-271"><span class="linenos">271</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span><span id="PSFtype2-272"><a href="#PSFtype2-272"><span class="linenos">272</span></a>        <span class="c1"># Convert square PSF to circular PSF if requested</span>
+</span><span id="PSFtype2-273"><a href="#PSFtype2-273"><span class="linenos">273</span></a>        <span class="k">if</span> <span class="n">circular</span><span class="p">:</span>
+</span><span id="PSFtype2-274"><a href="#PSFtype2-274"><span class="linenos">274</span></a>            <span class="c1"># Apply mask</span>
+</span><span id="PSFtype2-275"><a href="#PSFtype2-275"><span class="linenos">275</span></a>            <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">*</span> <span class="n">circular_mask</span><span class="p">(</span><span class="n">psf_size</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">)</span>
+</span><span id="PSFtype2-276"><a href="#PSFtype2-276"><span class="linenos">276</span></a>            <span class="c1"># Remove the remnants of background</span>
+</span><span id="PSFtype2-277"><a href="#PSFtype2-277"><span class="linenos">277</span></a>            <span class="c1"># (after removing edges, array values may be slightly above zero!</span>
+</span><span id="PSFtype2-278"><a href="#PSFtype2-278"><span class="linenos">278</span></a>            <span class="c1"># (1) We subtract the 2nd lowest value - the lowest are the zeros</span>
+</span><span id="PSFtype2-279"><a href="#PSFtype2-279"><span class="linenos">279</span></a>            <span class="n">the_second_lowest_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">[</span><span class="n">psf</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">)])</span>
+</span><span id="PSFtype2-280"><a href="#PSFtype2-280"><span class="linenos">280</span></a>            <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">-</span> <span class="n">the_second_lowest_value</span>
+</span><span id="PSFtype2-281"><a href="#PSFtype2-281"><span class="linenos">281</span></a>        <span class="c1"># All negative values shoud go back above zero!</span>
+</span><span id="PSFtype2-282"><a href="#PSFtype2-282"><span class="linenos">282</span></a>        <span class="c1"># (the negative values may occur due to various recalcs and roundings</span>
+</span><span id="PSFtype2-283"><a href="#PSFtype2-283"><span class="linenos">283</span></a>        <span class="c1"># (they are very dangerous, leading to unwanted side-effects and errors</span>
+</span><span id="PSFtype2-284"><a href="#PSFtype2-284"><span class="linenos">284</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">psf</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">psf</span><span class="p">)</span>
+</span><span id="PSFtype2-285"><a href="#PSFtype2-285"><span class="linenos">285</span></a>        <span class="c1"># Return final PSF</span>
+</span><span id="PSFtype2-286"><a href="#PSFtype2-286"><span class="linenos">286</span></a>        <span class="k">return</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span></pre></div>
+
+
+    
+
+                            <div id="PSFtype2.__init__" class="classattr">
+                                <div class="attr function">
+            
+        <span class="name">PSFtype2</span><span class="signature pdoc-code condensed">()</span>
+
+        
+    </div>
+    <a class="headerlink" href="#PSFtype2.__init__"></a>
+    
+    
+
+                            </div>
+                            <div id="PSFtype2.get_psf" class="classattr">
+                                        <input id="PSFtype2.get_psf-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">def</span>
+        <span class="name">get_psf</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">arr</span>, </span><span class="param"><span class="n">psf_size</span>, </span><span class="param"><span class="n">circular</span><span class="o">=</span><span class="kc">False</span></span><span class="return-annotation">):</span></span>
+
+                <label class="view-source-button" for="PSFtype2.get_psf-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#PSFtype2.get_psf"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="PSFtype2.get_psf-234"><a href="#PSFtype2.get_psf-234"><span class="linenos">234</span></a>    <span class="k">def</span> <span class="nf">get_psf</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">,</span> <span class="n">circular</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+</span><span id="PSFtype2.get_psf-235"><a href="#PSFtype2.get_psf-235"><span class="linenos">235</span></a>        <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="PSFtype2.get_psf-236"><a href="#PSFtype2.get_psf-236"><span class="linenos">236</span></a><span class="sd">        Get PSF of type2 = estimated from a small central region.</span>
+</span><span id="PSFtype2.get_psf-237"><a href="#PSFtype2.get_psf-237"><span class="linenos">237</span></a>
+</span><span id="PSFtype2.get_psf-238"><a href="#PSFtype2.get_psf-238"><span class="linenos">238</span></a><span class="sd">        Parameters</span>
+</span><span id="PSFtype2.get_psf-239"><a href="#PSFtype2.get_psf-239"><span class="linenos">239</span></a><span class="sd">        ----------</span>
+</span><span id="PSFtype2.get_psf-240"><a href="#PSFtype2.get_psf-240"><span class="linenos">240</span></a><span class="sd">        arr : 2D-numpy array</span>
+</span><span id="PSFtype2.get_psf-241"><a href="#PSFtype2.get_psf-241"><span class="linenos">241</span></a><span class="sd">            The array/datafile, from which the PSF is to be determined.</span>
+</span><span id="PSFtype2.get_psf-242"><a href="#PSFtype2.get_psf-242"><span class="linenos">242</span></a><span class="sd">            The array is a square with geometrical center = intensity center.</span>
+</span><span id="PSFtype2.get_psf-243"><a href="#PSFtype2.get_psf-243"><span class="linenos">243</span></a><span class="sd">            See *Technical notes* below for more details and consequences.</span>
+</span><span id="PSFtype2.get_psf-244"><a href="#PSFtype2.get_psf-244"><span class="linenos">244</span></a><span class="sd">        psf_size : int</span>
+</span><span id="PSFtype2.get_psf-245"><a href="#PSFtype2.get_psf-245"><span class="linenos">245</span></a><span class="sd">            The size/diameter of PSF function to be determined.</span>
+</span><span id="PSFtype2.get_psf-246"><a href="#PSFtype2.get_psf-246"><span class="linenos">246</span></a><span class="sd">        circular : bool, optional, default is False</span>
+</span><span id="PSFtype2.get_psf-247"><a href="#PSFtype2.get_psf-247"><span class="linenos">247</span></a><span class="sd">            If True, apply circular mask - change square PSF to circular PSF.</span>
+</span><span id="PSFtype2.get_psf-248"><a href="#PSFtype2.get_psf-248"><span class="linenos">248</span></a><span class="sd">            </span>
+</span><span id="PSFtype2.get_psf-249"><a href="#PSFtype2.get_psf-249"><span class="linenos">249</span></a><span class="sd">        Returns</span>
+</span><span id="PSFtype2.get_psf-250"><a href="#PSFtype2.get_psf-250"><span class="linenos">250</span></a><span class="sd">        -------</span>
+</span><span id="PSFtype2.get_psf-251"><a href="#PSFtype2.get_psf-251"><span class="linenos">251</span></a><span class="sd">        psf : 2D-numpy array</span>
+</span><span id="PSFtype2.get_psf-252"><a href="#PSFtype2.get_psf-252"><span class="linenos">252</span></a><span class="sd">            The array represents estimate of experimental PSF.</span>
+</span><span id="PSFtype2.get_psf-253"><a href="#PSFtype2.get_psf-253"><span class="linenos">253</span></a>
+</span><span id="PSFtype2.get_psf-254"><a href="#PSFtype2.get_psf-254"><span class="linenos">254</span></a><span class="sd">        Technical notes</span>
+</span><span id="PSFtype2.get_psf-255"><a href="#PSFtype2.get_psf-255"><span class="linenos">255</span></a><span class="sd">        --------------</span>
+</span><span id="PSFtype2.get_psf-256"><a href="#PSFtype2.get_psf-256"><span class="linenos">256</span></a><span class="sd">        In our algorithm, we send a square centered array to this function.</span>
+</span><span id="PSFtype2.get_psf-257"><a href="#PSFtype2.get_psf-257"><span class="linenos">257</span></a><span class="sd">        This means that intensity center = geometric center of the array.</span>
+</span><span id="PSFtype2.get_psf-258"><a href="#PSFtype2.get_psf-258"><span class="linenos">258</span></a><span class="sd">        Consequence: we do not have to determine intensity center</span>
+</span><span id="PSFtype2.get_psf-259"><a href="#PSFtype2.get_psf-259"><span class="linenos">259</span></a><span class="sd">        and waste time - it is enough to calculate geometrical center.</span>
+</span><span id="PSFtype2.get_psf-260"><a href="#PSFtype2.get_psf-260"><span class="linenos">260</span></a><span class="sd">        &#39;&#39;&#39;</span>
+</span><span id="PSFtype2.get_psf-261"><a href="#PSFtype2.get_psf-261"><span class="linenos">261</span></a>        <span class="c1"># Get center</span>
+</span><span id="PSFtype2.get_psf-262"><a href="#PSFtype2.get_psf-262"><span class="linenos">262</span></a>        <span class="c1"># (just geometrical center as explained in the docstring</span>
+</span><span id="PSFtype2.get_psf-263"><a href="#PSFtype2.get_psf-263"><span class="linenos">263</span></a>        <span class="n">xc</span> <span class="o">=</span> <span class="n">yc</span> <span class="o">=</span> <span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+</span><span id="PSFtype2.get_psf-264"><a href="#PSFtype2.get_psf-264"><span class="linenos">264</span></a>        <span class="c1"># Remove edges</span>
+</span><span id="PSFtype2.get_psf-265"><a href="#PSFtype2.get_psf-265"><span class="linenos">265</span></a>        <span class="c1"># (leave only central square with psf_size </span>
+</span><span id="PSFtype2.get_psf-266"><a href="#PSFtype2.get_psf-266"><span class="linenos">266</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">stemdiff</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">Arrays</span><span class="o">.</span><span class="n">remove_edges</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">,</span> <span class="n">xc</span><span class="p">,</span><span class="n">yc</span><span class="p">)</span>
+</span><span id="PSFtype2.get_psf-267"><a href="#PSFtype2.get_psf-267"><span class="linenos">267</span></a>        <span class="c1"># Remove background</span>
+</span><span id="PSFtype2.get_psf-268"><a href="#PSFtype2.get_psf-268"><span class="linenos">268</span></a>        <span class="c1"># (PSF is from the center, it &quot;sits&quot; on some background intensity</span>
+</span><span id="PSFtype2.get_psf-269"><a href="#PSFtype2.get_psf-269"><span class="linenos">269</span></a>        <span class="c1"># !!! Convert PSF from uint to float - uint fails for negative values!</span>
+</span><span id="PSFtype2.get_psf-270"><a href="#PSFtype2.get_psf-270"><span class="linenos">270</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</span><span id="PSFtype2.get_psf-271"><a href="#PSFtype2.get_psf-271"><span class="linenos">271</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span><span id="PSFtype2.get_psf-272"><a href="#PSFtype2.get_psf-272"><span class="linenos">272</span></a>        <span class="c1"># Convert square PSF to circular PSF if requested</span>
+</span><span id="PSFtype2.get_psf-273"><a href="#PSFtype2.get_psf-273"><span class="linenos">273</span></a>        <span class="k">if</span> <span class="n">circular</span><span class="p">:</span>
+</span><span id="PSFtype2.get_psf-274"><a href="#PSFtype2.get_psf-274"><span class="linenos">274</span></a>            <span class="c1"># Apply mask</span>
+</span><span id="PSFtype2.get_psf-275"><a href="#PSFtype2.get_psf-275"><span class="linenos">275</span></a>            <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">*</span> <span class="n">circular_mask</span><span class="p">(</span><span class="n">psf_size</span><span class="p">,</span> <span class="n">psf_size</span><span class="p">)</span>
+</span><span id="PSFtype2.get_psf-276"><a href="#PSFtype2.get_psf-276"><span class="linenos">276</span></a>            <span class="c1"># Remove the remnants of background</span>
+</span><span id="PSFtype2.get_psf-277"><a href="#PSFtype2.get_psf-277"><span class="linenos">277</span></a>            <span class="c1"># (after removing edges, array values may be slightly above zero!</span>
+</span><span id="PSFtype2.get_psf-278"><a href="#PSFtype2.get_psf-278"><span class="linenos">278</span></a>            <span class="c1"># (1) We subtract the 2nd lowest value - the lowest are the zeros</span>
+</span><span id="PSFtype2.get_psf-279"><a href="#PSFtype2.get_psf-279"><span class="linenos">279</span></a>            <span class="n">the_second_lowest_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">[</span><span class="n">psf</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">psf</span><span class="p">)])</span>
+</span><span id="PSFtype2.get_psf-280"><a href="#PSFtype2.get_psf-280"><span class="linenos">280</span></a>            <span class="n">psf</span> <span class="o">=</span> <span class="n">psf</span> <span class="o">-</span> <span class="n">the_second_lowest_value</span>
+</span><span id="PSFtype2.get_psf-281"><a href="#PSFtype2.get_psf-281"><span class="linenos">281</span></a>        <span class="c1"># All negative values shoud go back above zero!</span>
+</span><span id="PSFtype2.get_psf-282"><a href="#PSFtype2.get_psf-282"><span class="linenos">282</span></a>        <span class="c1"># (the negative values may occur due to various recalcs and roundings</span>
+</span><span id="PSFtype2.get_psf-283"><a href="#PSFtype2.get_psf-283"><span class="linenos">283</span></a>        <span class="c1"># (they are very dangerous, leading to unwanted side-effects and errors</span>
+</span><span id="PSFtype2.get_psf-284"><a href="#PSFtype2.get_psf-284"><span class="linenos">284</span></a>        <span class="n">psf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">psf</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">psf</span><span class="p">)</span>
+</span><span id="PSFtype2.get_psf-285"><a href="#PSFtype2.get_psf-285"><span class="linenos">285</span></a>        <span class="c1"># Return final PSF</span>
+</span><span id="PSFtype2.get_psf-286"><a href="#PSFtype2.get_psf-286"><span class="linenos">286</span></a>        <span class="k">return</span><span class="p">(</span><span class="n">psf</span><span class="p">)</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Get PSF of type2 = estimated from a small central region.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>arr</strong> (2D-numpy array):
+The array/datafile, from which the PSF is to be determined.
+The array is a square with geometrical center = intensity center.
+See <em>Technical notes</em> below for more details and consequences.</li>
+<li><strong>psf_size</strong> (int):
+The size/diameter of PSF function to be determined.</li>
+<li><strong>circular</strong> (bool, optional, default is False):
+If True, apply circular mask - change square PSF to circular PSF.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>psf</strong> (2D-numpy array):
+The array represents estimate of experimental PSF.</li>
+</ul>
+
+<h6 id="technical-notes">Technical notes</h6>
+
+<p>In our algorithm, we send a square centered array to this function.
+This means that intensity center = geometric center of the array.
+Consequence: we do not have to determine intensity center
+and waste time - it is enough to calculate geometrical center.</p>
+</div>
+
+
+                            </div>
+                </section>
     </main>
 <script>
     function escapeHTML(html) {

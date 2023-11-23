@@ -69,10 +69,34 @@
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="sd">Background correction/reduction. </span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">&#39;&#39;&#39;</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="k">def</span> <span class="nf">rolling_ball</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="k">pass</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">import</span> <span class="nn">skimage</span> <span class="k">as</span> <span class="nn">sk</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="k">def</span> <span class="nf">rolling_ball</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="sd">    Subtract background from an array using *rolling ball* algorithm.</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="sd">    Parameters</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="sd">    ----------</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="sd">    arr : numpy array</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="sd">        Original array.</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="sd">        Usually 2D-array supplied from package stemdiff.</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="sd">    radius : int, optional, default is 20</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="sd">        Radius of the rolling ball</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="sd">    Returns</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="sd">    -------</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="sd">    arr_bcorr : numpy array</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="sd">        The array with the subtracted background.</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">    &#39;&#39;&#39;</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="c1"># Get background from RollingBall algorithm in sk = skimage</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="n">background</span> <span class="o">=</span> <span class="n">sk</span><span class="o">.</span><span class="n">restoration</span><span class="o">.</span><span class="n">rolling_ball</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">)</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="c1"># Subtract background from original array</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="n">arr_bcorr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">-</span> <span class="n">background</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="c1"># Return array with subtracted background</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="k">return</span><span class="p">(</span><span class="n">arr_bcorr</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -82,18 +106,59 @@
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">rolling_ball</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">arr</span>, </span><span class="param"><span class="n">radius</span></span><span class="return-annotation">):</span></span>
+        <span class="name">rolling_ball</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">arr</span>, </span><span class="param"><span class="n">radius</span><span class="o">=</span><span class="mi">20</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="rolling_ball-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#rolling_ball"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="rolling_ball-10"><a href="#rolling_ball-10"><span class="linenos">10</span></a><span class="k">def</span> <span class="nf">rolling_ball</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">radius</span><span class="p">):</span>
-</span><span id="rolling_ball-11"><a href="#rolling_ball-11"><span class="linenos">11</span></a>    <span class="k">pass</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="rolling_ball-12"><a href="#rolling_ball-12"><span class="linenos">12</span></a><span class="k">def</span> <span class="nf">rolling_ball</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+</span><span id="rolling_ball-13"><a href="#rolling_ball-13"><span class="linenos">13</span></a>    <span class="sd">&#39;&#39;&#39;</span>
+</span><span id="rolling_ball-14"><a href="#rolling_ball-14"><span class="linenos">14</span></a><span class="sd">    Subtract background from an array using *rolling ball* algorithm.</span>
+</span><span id="rolling_ball-15"><a href="#rolling_ball-15"><span class="linenos">15</span></a>
+</span><span id="rolling_ball-16"><a href="#rolling_ball-16"><span class="linenos">16</span></a><span class="sd">    Parameters</span>
+</span><span id="rolling_ball-17"><a href="#rolling_ball-17"><span class="linenos">17</span></a><span class="sd">    ----------</span>
+</span><span id="rolling_ball-18"><a href="#rolling_ball-18"><span class="linenos">18</span></a><span class="sd">    arr : numpy array</span>
+</span><span id="rolling_ball-19"><a href="#rolling_ball-19"><span class="linenos">19</span></a><span class="sd">        Original array.</span>
+</span><span id="rolling_ball-20"><a href="#rolling_ball-20"><span class="linenos">20</span></a><span class="sd">        Usually 2D-array supplied from package stemdiff.</span>
+</span><span id="rolling_ball-21"><a href="#rolling_ball-21"><span class="linenos">21</span></a><span class="sd">    radius : int, optional, default is 20</span>
+</span><span id="rolling_ball-22"><a href="#rolling_ball-22"><span class="linenos">22</span></a><span class="sd">        Radius of the rolling ball</span>
+</span><span id="rolling_ball-23"><a href="#rolling_ball-23"><span class="linenos">23</span></a>
+</span><span id="rolling_ball-24"><a href="#rolling_ball-24"><span class="linenos">24</span></a><span class="sd">    Returns</span>
+</span><span id="rolling_ball-25"><a href="#rolling_ball-25"><span class="linenos">25</span></a><span class="sd">    -------</span>
+</span><span id="rolling_ball-26"><a href="#rolling_ball-26"><span class="linenos">26</span></a><span class="sd">    arr_bcorr : numpy array</span>
+</span><span id="rolling_ball-27"><a href="#rolling_ball-27"><span class="linenos">27</span></a><span class="sd">        The array with the subtracted background.</span>
+</span><span id="rolling_ball-28"><a href="#rolling_ball-28"><span class="linenos">28</span></a>
+</span><span id="rolling_ball-29"><a href="#rolling_ball-29"><span class="linenos">29</span></a><span class="sd">    &#39;&#39;&#39;</span>
+</span><span id="rolling_ball-30"><a href="#rolling_ball-30"><span class="linenos">30</span></a>    <span class="c1"># Get background from RollingBall algorithm in sk = skimage</span>
+</span><span id="rolling_ball-31"><a href="#rolling_ball-31"><span class="linenos">31</span></a>    <span class="n">background</span> <span class="o">=</span> <span class="n">sk</span><span class="o">.</span><span class="n">restoration</span><span class="o">.</span><span class="n">rolling_ball</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">radius</span><span class="o">=</span><span class="n">radius</span><span class="p">)</span>
+</span><span id="rolling_ball-32"><a href="#rolling_ball-32"><span class="linenos">32</span></a>    <span class="c1"># Subtract background from original array</span>
+</span><span id="rolling_ball-33"><a href="#rolling_ball-33"><span class="linenos">33</span></a>    <span class="n">arr_bcorr</span> <span class="o">=</span> <span class="n">arr</span> <span class="o">-</span> <span class="n">background</span>
+</span><span id="rolling_ball-34"><a href="#rolling_ball-34"><span class="linenos">34</span></a>    <span class="c1"># Return array with subtracted background</span>
+</span><span id="rolling_ball-35"><a href="#rolling_ball-35"><span class="linenos">35</span></a>    <span class="k">return</span><span class="p">(</span><span class="n">arr_bcorr</span><span class="p">)</span>
 </span></pre></div>
 
 
-    
+            <div class="docstring"><p>Subtract background from an array using <em>rolling ball</em> algorithm.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>arr</strong> (numpy array):
+Original array.
+Usually 2D-array supplied from package stemdiff.</li>
+<li><strong>radius</strong> (int, optional, default is 20):
+Radius of the rolling ball</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<ul>
+<li><strong>arr_bcorr</strong> (numpy array):
+The array with the subtracted background.</li>
+</ul>
+</div>
+
 
                 </section>
     </main>
