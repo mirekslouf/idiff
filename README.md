@@ -19,3 +19,5 @@ Versions of EDIFF
 
 * Version 0.0.1 = just draft
 * Version 0.0.2 = the second draft
+* Version 0.1 = working modules: bcorr, psf + draft modules ncorr, deconv
+
