@@ -96,7 +96,6 @@ def plot_psf(arr, plt_type='2D', plt_size=None, output=None):
         Y = np.linspace(-Yhalf,Yhalf, num=Ysize, endpoint=True)
         Xm,Ym = np.meshgrid(X,Y)
         # Create 3D-plot
-        from mpl_toolkits.mplot3d import Axes3D
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.plot_surface(
