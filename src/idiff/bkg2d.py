@@ -1,7 +1,7 @@
 '''
-idiff.bcorr
-------------
-Background correction/reduction. 
+Module: idiff.bkg2d
+-------------------
+Background subtraction for 2D-arrays/images 
 '''
 
 
