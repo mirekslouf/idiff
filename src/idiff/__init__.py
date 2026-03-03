@@ -5,6 +5,7 @@ IDIFF = functions to Improve DIFFraction patterns.
 
 * idiff.bkg2d  = background subtraction for 2D-arrays/images
 * idiff.deconv = advanced deconvolution methods (beyond RL)
+* idiff.peaks  = functions to detect peaks on 2D diffraction patterns
 * idiff.psf    = functions to estimate 2D-PSF = 2D point spread function       
 
 The functions are employed in our diffraction-related packages:
@@ -13,8 +14,9 @@ The functions are employed in our diffraction-related packages:
 * EDIFF    = convert 2D-diffratograms to 1D-profiles and compare with theory. 
 '''
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 import idiff.bkg2d
 import idiff.deconv
+import idiff.peaks
 import idiff.psf
