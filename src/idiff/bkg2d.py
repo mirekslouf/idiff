@@ -1,7 +1,8 @@
 '''
-idiff.bcorr
-------------
-Background correction/reduction. 
+Module: idiff.bkg2d
+-------------------
+
+Background subtraction for 2D-arrays/images.
 '''
 
 
@@ -25,7 +26,6 @@ def rolling_ball(arr, radius=20):
     -------
     arr_bcorr : numpy array
         The array with the subtracted background.
-
     '''
     # Get background from RollingBall algorithm in sk = skimage
     background = sk.restoration.rolling_ball(arr, radius=radius)

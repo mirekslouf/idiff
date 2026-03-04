@@ -1,9 +1,10 @@
 '''
-idiff.psf
----------
-Estimate PSF from 4D-STEM datafiles.
+Module : idiff.psf
+------------------
+Estimate 2D-PSF from 4D-STEM datasets and individual 2D-NBD patterns.
 
-PSF = Point Spread Function = XY-spread of the primary beam.
+* 2D-PSF = PSF = Point Spread Function = XY-spread of the primary beam.
+* 2D-PSF is estimated/averaged from the central spot in 4D-STEM or 2D-NBD.
 '''
 
 import numpy as np

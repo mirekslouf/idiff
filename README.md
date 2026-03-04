@@ -2,7 +2,7 @@ IDIFF :: improving 2D diffraction patterns
 ------------------------------------------
 
 * IDIFF contains functions for improvement od 2D diffraction patterns.
-* Improvements = deconvolution, background subtraction, noise reduction.
+* Improvements = 2D-PSF estimation + deconvolution, background subtraction. 
 
 Quick start
 -----------
@@ -17,7 +17,4 @@ Documentation, help and examples
 Versions of EDIFF
 -----------------
 
-* Version 0.0.1 = just draft
-* Version 0.0.2 = the second draft
-* Version 0.1 = working modules: bcorr, psf + draft modules ncorr, deconv
-
+* Version 0.1 = modules with basic functions {bkg2d, psf, deconv}
