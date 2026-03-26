@@ -18,6 +18,20 @@ import numpy as np
 
 
 def _estimate_noise(img):
+    '''Computes robust sigma using MAD (normal scale factor),
+       with safe fallback if MAD is zero/NaN.
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image.
+
+    Returns
+    -------
+    float
+        Noise sigma.
+    '''
+
     median_val = np.nanmedian(img)
     if np.isnan(median_val):
         print("\nWarning: Median is NaN.")
@@ -36,7 +50,30 @@ def _estimate_noise(img):
 
 def _run_log(img, downsample_factor=4, threshold_factor=3.5, peak_min_sigma=6, 
              peak_max_sigma=60, num_sigma_steps=30):
-    """Runs LoG detector, with optional downsampling."""
+    '''Runs LoG detector, with optional downsampling.
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image for peak detection.
+    downsample_factor : int, optional
+        Optional speed-up by processing downsampled image and
+        mapping detections back, by default 4
+    threshold_factor : float, optional
+        Detection threshold scale (used with estimated noise sigma),
+        by default 3.5
+    peak_min_sigma : float, optional
+        by default 6
+    peak_max_sigma : float, optional
+        by default 60
+    num_sigma_steps : int, optional
+        by default 30
+
+    Returns
+    -------
+    3 Numpy arrays
+        Returns rows, columns and scores of found peaks.    
+    '''
     original_shape = img.shape
     noise_sigma = _estimate_noise(img)
     abs_threshold = noise_sigma * threshold_factor
@@ -90,6 +127,34 @@ def _run_log(img, downsample_factor=4, threshold_factor=3.5, peak_min_sigma=6,
     
 def _run_doh(img, downsample_factor=4, threshold_factor=3.5, peak_min_sigma=6, 
              peak_max_sigma=60, num_sigma_steps=30, log_scale=False):
+    '''Runs DoH detector, with optional downsampling.
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image for peak detection.
+    downsample_factor : int, optional
+        Optional speed-up by processing downsampled image and
+        mapping detections back, by default 4
+    threshold_factor : float, optional
+        Detection threshold scale (used with estimated noise sigma),
+        by default 3.5
+    peak_min_sigma : float, optional
+        by default 6
+    peak_max_sigma : float, optional
+        by default 60
+    num_sigma_steps : int, optional
+        by default 30
+    log_scale : bool, optional
+        If set intermediate values of standard deviations are interpolated
+        using a logarithmic scale to the base 10. 
+        If not, linear interpolation is used.
+
+    Returns
+    -------
+    3 Numpy arrays
+        Returns rows, columns and scores of found peaks.
+    '''
     """Runs DoH detector, with optional downsampling."""
     original_shape = img.shape
     # DoH threshold needs careful tuning, especially with downsampling. 
@@ -150,6 +215,29 @@ def _run_doh(img, downsample_factor=4, threshold_factor=3.5, peak_min_sigma=6,
         return blobs[:, 0], blobs[:, 1], blobs[:, 2]
     
 def _run_mser(img, delta=5, min_area=60, max_area=14400):
+    '''Maximally Stable Extremal Regions from OpenCV. 
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image for peak detection.
+    delta : int, optional
+        by default 5
+    min_area : int, optional
+        by default 60
+    max_area : int, optional
+        by default 14400
+
+    Returns
+    -------
+    3 Numpy arrays
+        Returns rows, columns and scores of found peaks.
+
+    Raises
+    ------
+    ImportError
+        Raises error if OpenCV is not installed.
+    '''
 
     if 'cv2' not in globals(): 
         raise ImportError("MSER requires OpenCV (cv2)")
@@ -182,6 +270,28 @@ def _run_mser(img, delta=5, min_area=60, max_area=14400):
     
 def _run_pcbr(img, sigma=3.0, lambda_thresh=0.5, response_thresh_rel=0.1, 
               min_distance=5):
+    '''Principal-curvature-based response (Hessian eigenvalue + local maxima)
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image for peak detection.
+    sigma : float, optional
+        Hessian scale., by default 3.0
+    lambda_thresh : float, optional
+        Negative-eigenvalue threshold for ridge-like response, by default 0.5
+    response_thresh_rel : float, optional
+        Relative threshold for local maxima extraction in response map, 
+        by default 0.1
+    min_distance : int, optional
+        Minimum spacing between PCBR local maxima, by default 5
+
+    Returns
+    -------
+    3 Numpy arrays
+        Returns rows, columns and scores of found peaks.
+    '''
+
     try:
         Hrr, Hrc, Hcc = hessian_matrix(img,
             sigma=sigma,
@@ -234,8 +344,30 @@ def _run_pcbr(img, sigma=3.0, lambda_thresh=0.5, response_thresh_rel=0.1,
         return np.array([]), np.array([]), np.array([])
     
 
-# default uses all algs with default parameters
 def _run_vote(img, min_votes=2, vote_radius=5.0, methods={}):
+    '''Runs multiple detectors, groups nearby points, keeps consensus.
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image for peak detection.
+    min_votes : int, optional
+        Minimum number of distinct detector methods required for consensus, 
+        by default 2
+    vote_radius : float, optional
+        Spatial clustering radius between detections from different detectors,
+        by default 5.0
+    methods : dict, optional
+        Dictionary with methods as keys and their arguments as values, 
+        by default uses log, doh, mser and pcbr with default parameters.
+        Example `{_run_mser: {delta=4}, _run_pcbr: {sigma=3.5}}`
+
+    Returns
+    -------
+    3 Numpy arrays
+        Returns rows, columns and scores of found peaks.
+    '''
+
     all_detections = []
     if not methods:
         methods = {_run_log: {}, _run_doh: {}, _run_mser: {},_run_pcbr: {}}
@@ -299,7 +431,28 @@ def _run_vote(img, min_votes=2, vote_radius=5.0, methods={}):
     return peak_rows, peak_cols, peak_scores
     
 def filter_central_region(img, peak_rows, peak_cols, peak_scores, 
-                          ignore_radius_pixels):
+                          ignore_radius_pixels=50):
+    '''Removes detections inside
+       `ignore_radius_pixels` around image center.
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image.
+    peak_rows : Numpy 1D array
+        X coordinates of peaks.
+    peak_cols : Numpy 1D array
+        Y coordinates of peaks.
+    peak_scores : Numpy 1D array
+        Peak scores.
+    ignore_radius_pixels : int, optional
+        Peaks inside this center radius are discarded, by default 50.
+
+    Returns
+    -------
+    3 Numpy arrays
+        Returns rows, columns and scores of peaks.
+    '''
     if len(peak_rows) > 0:
         center_y, center_x = img.shape[0] // 2, img.shape[1] // 2
         center_dist_sq = (peak_rows - center_y) ** 2 + \
@@ -312,11 +465,40 @@ def filter_central_region(img, peak_rows, peak_cols, peak_scores,
                 peak_scores[keep_indices])
 
 
-# Calculate Integrated Intensities via Aperture Sum
-# TODO: mention sigma score is for log and doh methods
 def calculate_integrated_intensities(img, peak_rows, peak_cols, peak_scores,
                                      use_sigma_factor=True,
                                      sigma_factor=3, fixed_radius=5):
+    '''Calculate Integrated Intensities via Aperture Sum.
+    For each surviving detection, intensity is integrated from
+    background-subtracted image in a circular aperture:
+        - LoG/DoH: radius ≈ `sigma_factor * sigma_score`
+        - Other detectors: fixed `fixed_radius`
+    Intensities are summed inside the aperture mask (local ROI for efficiency).
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image.
+    peak_rows : Numpy 1D array
+        X coordinates of peaks.
+    peak_cols : Numpy 1D array
+        Y coordinates of peaks.
+    peak_scores : Numpy 1D array
+        Peak scores.
+    use_sigma_factor : bool, optional
+        Controls if sigma factor or fixed radius are used, by default True.
+        Sigma factor should be used for LoG/DoH.
+    sigma_factor : float, optional
+        Aperture radius multiplier (sigma-based radius), by default 3.
+    fixed_radius : int, optional
+        Fixed aperture radius, by default 5.
+
+    Returns
+    -------
+    Numpy 1D array
+        Integrated intensities.
+    '''
+
     integrated_intensities = np.zeros(len(peak_rows), dtype=float)
     img_h, img_w = img.shape
 
@@ -380,6 +562,32 @@ def calculate_integrated_intensities(img, peak_rows, peak_cols, peak_scores,
     return integrated_intensities
 
 def dirac_delta_image(img, peak_rows, peak_cols, peak_intensities):
+    '''Dirac-delta image construction
+       Peaks are stored as `(row, col, integrated_intensity, score)`, 
+       sorted by intensity.
+       Output image is zeros; 
+       each peak contributes intensity to one rounded pixel.
+       Overlaps are accumulated using `np.add.at`.
+
+    Parameters
+    ----------
+    img : Numpy 2D array
+        Input image.
+    peak_rows : Numpy 1D array
+        X coordinates of peaks.
+    peak_cols : Numpy 1D array
+        Y coordinates of peaks.
+    peak_intensities : Numpy 1D array
+        Intensities of peaks
+
+    Returns
+    -------
+    Numpy 2D array
+        2D float Dirac image (same shape as input):
+        each detected peak is a single non-zero pixel equal to 
+        integrated intensity.
+    '''
+
     # Store results (with float coords), sorted by intensity
     if len(peak_rows) > 0:
         peaks_data = sorted(list(zip(peak_rows, peak_cols, peak_intensities)),
@@ -408,7 +616,7 @@ def detect_peaks(img, alg, **kwargs):
     rows, cols, scores = alg(img, **kwargs)
     rows, cols, scores = filter_central_region(img, rows, cols, scores)
 
-    # Calculate Integrated Intensities via Aperture Sum ---
+    # Calculate Integrated Intensities via Aperture Sum
     integrated_intensities = calculate_integrated_intensities(img, rows, cols, 
                                                               scores)
     return rows, cols, integrated_intensities, scores
