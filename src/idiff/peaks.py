@@ -249,9 +249,9 @@ def _run_mser(img, delta=5, min_area=60, max_area=14400):
     else:
         img_uint8 = np.zeros_like(img, dtype=np.uint8)
 
-    mser = cv2.MSER_create(_delta=delta, 
-                           _min_area=min_area, 
-                           _max_area=max_area)
+    mser = cv2.MSER_create(delta=delta, 
+                           min_area=min_area, 
+                           max_area=max_area)
     
     regions, bboxes = mser.detectRegions(img_uint8)
     if not regions:
@@ -311,7 +311,7 @@ def _run_pcbr(img, sigma=3.0, lambda_thresh=0.5, response_thresh_rel=0.1,
             Hrr = np.nan_to_num(Hrr)
             Hrc = np.nan_to_num(Hrc)
             Hcc = np.nan_to_num(Hcc)
-        lambda1, lambda2 = hessian_matrix_eigvals(Hrr, Hrc, Hcc)
+        lambda1, lambda2 = hessian_matrix_eigvals([Hrr, Hrc, Hcc])
     except Exception as e:
         print(f"ERROR calculating Hessian eigenvalues: {e}. Skipping PCBR.")
         return np.array([]), np.array([]), np.array([])
@@ -463,6 +463,8 @@ def filter_central_region(img, peak_rows, peak_cols, peak_scores,
         return (peak_rows[keep_indices], 
                 peak_cols[keep_indices], 
                 peak_scores[keep_indices])
+    
+    return np.array([]), np.array([]), np.array([])
 
 
 def calculate_integrated_intensities(img, peak_rows, peak_cols, peak_scores,
