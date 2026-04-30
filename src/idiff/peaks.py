@@ -14,8 +14,9 @@ from skimage.feature import (
 import cv2
 from collections import defaultdict
 from skimage.transform import resize
+from skimage.measure import label, regionprops
 import numpy as np
-
+from typing import *
 
 def _estimate_noise(img):
     '''Computes robust sigma using MAD (normal scale factor),
@@ -623,3 +624,36 @@ def detect_peaks(img, alg, **kwargs):
                                                               scores)
     return rows, cols, integrated_intensities, scores
 
+def run_regions(image, threshold=1):
+    '''
+    Detects peaks by finding connected region with values equal to or higher
+    than `threshold`.
+
+    Parameters
+    ----------
+    image : Numpy 2D array
+        Input image.
+    threshold : int, optional, default is 1
+        Values less than `threshold` will be ignored.
+
+    Returns
+    -------
+    Numpy 2D array
+        _description_
+    '''
+    
+    binary_image = (image >= threshold).astype(np.uint8)
+
+    labeled_image = label(binary_image)
+    new_image = np.zeros_like(image, dtype=np.float32)
+    regions = regionprops(labeled_image)
+    for region in regions:
+        if region.area >= 1:
+            coords = region.coords
+            sum_intensity = image[coords[:, 0], coords[:, 1]].sum()
+            centroid = region.centroid
+            new_image[int(centroid[0]), int(centroid[1])] = sum_intensity
+
+    arr = new_image
+
+    return arr
