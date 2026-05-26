@@ -10,6 +10,7 @@ import skimage as sk
 from scipy.ndimage import white_tophat
 from skimage.measure import label, regionprops
 from skimage.morphology import disk
+import cv2
 import numpy as np
 import onnxruntime as ort
 
@@ -40,10 +41,21 @@ def rolling_ball(arr, radius=20):
 
 def tophat(arr, thr=40, area_size=5, radius=2):
     # Apply white top-hat morphological operation
-    tophat_result = white_tophat(arr, footprint=disk(radius))
+    result = white_tophat(arr, footprint=disk(radius))
     
-    # Threshold the result
-    mask = tophat_result > thr
+    return _remove_small_components(result, thr, area_size)
+
+def gaussian(arr, thr=20, area_size=5, sigma=2):
+    b = cv2.GaussianBlur(arr, (0, 0), sigma)
+    b = np.clip(b, 0, arr)
+    result = arr - b
+    
+    return _remove_small_components(result, thr, area_size)
+
+
+def _remove_small_components(arr, thr, area_size):
+    # Threshold the array
+    mask = arr > thr
     
     # Label connected components
     labeled_mask = label(mask, connectivity=1)  # 1 = 4-connectivity
@@ -51,16 +63,16 @@ def tophat(arr, thr=40, area_size=5, radius=2):
     refined_output = np.zeros_like(arr)
     
     # Iterate over connected regions
-    for region in regionprops(labeled_mask, intensity_image=tophat_result):
+    for region in regionprops(labeled_mask, intensity_image=arr):
         if region.area >= area_size:
             coords = tuple(zip(*region.coords))
-            refined_output[coords] = tophat_result[coords]
+            refined_output[coords] = arr[coords]
     
     return refined_output
 
 class NeuralNetwork:
-    def __init__(self, path: str):
-        self.model = ort.InferenceSession(path)
+    def __init__(self, path: str, providers=None):
+        self.model = ort.InferenceSession(path, providers=providers)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         original_shape = x.shape
