@@ -14,7 +14,7 @@ The functions are employed in our diffraction-related packages:
 * EDIFF    = convert 2D-diffratograms to 1D-profiles and compare with theory. 
 '''
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 import idiff.bkg2d
 import idiff.deconv
