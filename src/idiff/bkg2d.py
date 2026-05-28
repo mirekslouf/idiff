@@ -7,8 +7,13 @@ Background subtraction for 2D-arrays/images.
 
 
 import skimage as sk
-import os
+from scipy.ndimage import white_tophat
+from skimage.measure import label, regionprops
+from skimage.morphology import disk
+import cv2
 import numpy as np
+import onnxruntime as ort
+
 
 def rolling_ball(arr, radius=20):
     '''
@@ -34,75 +39,55 @@ def rolling_ball(arr, radius=20):
     # Return array with subtracted background
     return(arr_bcorr)
 
-
-def deep_enhance(data, model_path, output_path=None):
-    """
-    Performs AI-based enhancement on diffraction data using Keras / PyTorch 
-    models.
-
-    This function automatically detects the model framework based on the file 
-    extension.
-
-    Parameters
-    ----------
-    data : numpy.ndarray
-        Input stack of diffraction patterns
-        
-    model_path : str
-        Path to the saved model file. 
-        Supported extensions: .keras, .h5 (Keras) or .pt, .pth (PyTorch).
-        
-    output_path : str, optional
-        Destination path for the result as a .npy file. 
-        If None, results are returned but not saved to disk.
-
-    Returns
-    -------
-    numpy.ndarray 
-        The enhanced/predicted image in (B, H, W, C) format.
-
-
-    Notes
-    -----
-    For PyTorch (.pt/.pth): This function assumes the model was saved as 
-    a complete object (torch.save(model)). If only the state_dict was saved, 
-    the architecture must be instantiated before loading.
-    """
-    extension = os.path.splitext(model_path)[1].lower()
+def tophat(arr, thr=40, area_size=5, radius=2):
+    # Apply white top-hat morphological operation
+    result = white_tophat(arr, footprint=disk(radius))
     
-    # (1) KERAS / TENSORFLOW
-    if extension in ['.keras', '.h5']:
-        from tensorflow.keras.models import load_model
-        model = load_model(model_path, compile=False)
-        prediction = model.predict(data)
+    return _remove_small_components(result, thr, area_size)
 
-    # (2) PYTORCH 
-    elif extension in ['.pt', '.pth']:
-        import torch
-        # Note: PyTorch expects [Batch, Channels, Height, Width]
-        # Swapping from [B, H, W, C] to [B, C, H, W]
-        data_torch = torch.from_numpy(data).permute(0, 3, 1, 2).float()
+def gaussian(arr, thr=20, area_size=5, sigma=2):
+    b = cv2.GaussianBlur(arr, (0, 0), sigma)
+    b = np.clip(b, 0, arr)
+    result = arr - b
+    
+    return _remove_small_components(result, thr, area_size)
+
+
+def _remove_small_components(arr, thr, area_size):
+    # Threshold the array
+    mask = arr > thr
+    
+    # Label connected components
+    labeled_mask = label(mask, connectivity=1)  # 1 = 4-connectivity
+    
+    refined_output = np.zeros_like(arr)
+    
+    # Iterate over connected regions
+    for region in regionprops(labeled_mask, intensity_image=arr):
+        if region.area >= area_size:
+            coords = tuple(zip(*region.coords))
+            refined_output[coords] = arr[coords]
+    
+    return refined_output
+
+class NeuralNetwork:
+    def __init__(self, path: str, providers=None):
+        self.model = ort.InferenceSession(path, providers=providers)
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        original_shape = x.shape
+
+        if len(x.shape) == 2:
+            x = x[None, None]
+        elif len(x.shape) == 3:
+            x = x[:, None]
         
-        # Loading the model
-        # Note: This assumes the model was saved via torch.save(model_obj)
-        # If only state_dict was saved, the architecture must be instantiated 
-        # first.
-        model = torch.load(model_path, map_location=torch.device('cpu'))
-        model.eval()
-        
-        with torch.no_grad():
-            output = model(data_torch)
-            
-            # Convert back to Numpy [B, H, W, C]
-            prediction = output.permute(0, 2, 3, 1).cpu().numpy()
+        if x.dtype != np.float32:
+            x = x.astype(np.float32)
 
-    else:
-        raise ValueError(f"Unsupported model extension: {extension}")
+        clean = self.model.run(None, {"x": x})
 
-    # Save results if path is provided
-    if output_path:
-        np.save(output_path, prediction)
-        print(f"Predictions saved to: {output_path}")
+        if x.dtype != np.float32:
+            clean = np.round(clean).astype(x.dtype)
 
-    return prediction
-
+        return np.reshape(clean, original_shape)
