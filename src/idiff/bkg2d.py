@@ -39,11 +39,13 @@ def rolling_ball(arr, radius=20):
     # Return array with subtracted background
     return(arr_bcorr)
 
+
 def tophat(arr, thr=40, area_size=5, radius=2):
     # Apply white top-hat morphological operation
     result = white_tophat(arr, footprint=disk(radius))
     
     return _remove_small_components(result, thr, area_size)
+
 
 def gaussian(arr, thr=20, area_size=5, sigma=2):
     b = cv2.GaussianBlur(arr, (0, 0), sigma)
@@ -70,13 +72,16 @@ def _remove_small_components(arr, thr, area_size):
     
     return refined_output
 
+
 class NeuralNetwork:
-    def __init__(self, path: str, providers=None):
-        self.model = ort.InferenceSession(path, providers=providers)
+    def __init__(self, path: str, **kwargs):
+        self.model = ort.InferenceSession(path, **kwargs)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
+        # Save original shape
         original_shape = x.shape
 
+        # Convert input to required shape and type
         if len(x.shape) == 2:
             x = x[None, None]
         elif len(x.shape) == 3:
@@ -85,9 +90,9 @@ class NeuralNetwork:
         if x.dtype != np.float32:
             x = x.astype(np.float32)
 
-        clean = self.model.run(None, {"x": x})
+        # Get name of the input argument
+        input_name = self.model.get_inputs()[0].name
+        clean = self.model.run(None, {input_name: x})[0]
 
-        if x.dtype != np.float32:
-            clean = np.round(clean).astype(x.dtype)
-
+        # Reshape to original shape and return result
         return np.reshape(clean, original_shape)
