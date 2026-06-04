@@ -639,20 +639,21 @@ def run_regions(image, threshold=1):
     Returns
     -------
     Numpy 2D array
-        _description_
+        2D array with every peak replaced by a single pixel at its centroid,
+        intensity equals to sum of peaks intensities.
     '''
     
     binary_image = (image >= threshold).astype(np.uint8)
 
     labeled_image = label(binary_image)
     new_image = np.zeros_like(image, dtype=np.float32)
-    regions = regionprops(labeled_image)
+    regions = regionprops(labeled_image, intensity_image=image)
     for region in regions:
         if region.area >= 1:
             coords = region.coords
             sum_intensity = image[coords[:, 0], coords[:, 1]].sum()
-            centroid = region.centroid
-            new_image[int(centroid[0]), int(centroid[1])] = sum_intensity
+            centroid = region.centroid_weighted
+            new_image[round(centroid[0]), round(centroid[1])] = sum_intensity
 
     arr = new_image
 

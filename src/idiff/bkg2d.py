@@ -71,12 +71,14 @@ def _remove_small_components(arr, thr, area_size):
     return refined_output
 
 class NeuralNetwork:
-    def __init__(self, path: str, providers=None):
-        self.model = ort.InferenceSession(path, providers=providers)
+    def __init__(self, path: str, **kwargs):
+        self.model = ort.InferenceSession(path, **kwargs)
 
     def predict(self, x: np.ndarray) -> np.ndarray:
+        # Save original shape
         original_shape = x.shape
 
+        # Convert input to required shape and type
         if len(x.shape) == 2:
             x = x[None, None]
         elif len(x.shape) == 3:
@@ -85,9 +87,9 @@ class NeuralNetwork:
         if x.dtype != np.float32:
             x = x.astype(np.float32)
 
-        clean = self.model.run(None, {"x": x})
+        # Get name of the input argument
+        input_name = self.model.get_inputs()[0].name
+        clean = self.model.run(None, {input_name: x})[0]
 
-        if x.dtype != np.float32:
-            clean = np.round(clean).astype(x.dtype)
-
+        # Reshape to original shape and return result
         return np.reshape(clean, original_shape)
