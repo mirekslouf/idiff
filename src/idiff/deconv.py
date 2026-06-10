@@ -23,9 +23,7 @@ The initial arguments are:
 
 
 import numpy as np
-import cupy as cp
 import matplotlib.pyplot as plt
-from cupyx.scipy.ndimage import convolve
 from scipy.ndimage import convolve as np_convolve
 import time
 from tqdm import tqdm
@@ -64,6 +62,12 @@ class RichardsonLucy:
         self.display = display
         self.timer = timer
         self.progress_bar = turn_off_progress_bar
+
+        # Lazy import cupy
+        if cuda:
+            import cupy as cp
+            from cupyx.scipy.ndimage import convolve
+
         cp.get_default_memory_pool().free_all_blocks()
         cp.get_default_pinned_memory_pool().free_all_blocks()
 
