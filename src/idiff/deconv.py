@@ -9,7 +9,7 @@ Works on grayscale images, not on color (no reason for color images).
 
 The initial arguments are:
 
-* iterations = number of iteration performed
+* num_iter = number of iteration performed
 * cuda = Bool = Use GPU if True, use CPU if false. Significantly speeds up
   computation.
 * display = Bool = show initial and resulting image, practical for
@@ -28,6 +28,14 @@ from scipy.ndimage import convolve as np_convolve
 import time
 from tqdm import tqdm
 
+try:
+    import cupy as cp
+    from cupyx.scipy.ndimage import convolve
+    HAS_CUPY = True
+except ImportError:
+    cp = None
+    HAS_CUPY = False
+
 
 class RichardsonLucy:
     """
@@ -35,7 +43,7 @@ class RichardsonLucy:
     regularization for image deconvolution.
 
     Attributes:
-        iterations (int): The number of iterations for the algorithm.
+        num_iter (int): The number of iterations for the algorithm.
             Default is 30.
         cuda (bool): Determines whether to use CUDA for computation.
             Default is True.
@@ -49,27 +57,29 @@ class RichardsonLucy:
     """
     def __init__(
         self,
-        iterations=30,
-        cuda=True,
+        num_iter=30,
+        cuda=False,
         display=False,
         timer=False,
         turn_off_progress_bar=True
     ):
-        if not isinstance(iterations, int) or iterations < 1:
-            raise ValueError("iterations should be a positive integer.")
-        self.iterations = iterations
+        if not isinstance(num_iter, int) or num_iter < 1:
+            raise ValueError("num_iter should be a positive integer.")
+        self.iterations = num_iter
         self.cuda = cuda
         self.display = display
         self.timer = timer
         self.progress_bar = turn_off_progress_bar
 
-        # Lazy import cupy
-        if cuda:
-            import cupy as cp
-            from cupyx.scipy.ndimage import convolve
+        if cuda and not HAS_CUPY:
+            raise ImportError(
+                "cupy is not installed, but cuda=True was requested. "
+                "Please install cupy or set cuda=False."
+            )
 
-        cp.get_default_memory_pool().free_all_blocks()
-        cp.get_default_pinned_memory_pool().free_all_blocks()
+        if cuda:
+            cp.get_default_memory_pool().free_all_blocks()
+            cp.get_default_pinned_memory_pool().free_all_blocks()
 
     new_float_type = {
         # preserved types
