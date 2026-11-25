@@ -32,5 +32,19 @@ setuptools.setup(
     package_dir={"":"src"},
     packages=setuptools.find_packages(where="src"),
     python_requires=">=3.6",
-    install_requires=["onnxruntime"],
+    install_requires=[
+        "numpy",
+        "scipy",
+        "scikit-image",  # skimage
+        "matplotlib",
+        "opencv-python",  # cv2
+        "onnxruntime",
+        "tqdm",
+    ],
+    extras_require={
+        # GPU acceleration, optional: CuPy needs a CUDA toolkit and the
+        # wheel must match the installed CUDA version, so it cannot be a
+        # hard requirement.
+        "gpu": ["cupy-cuda12x"],
+    },
     include_package_data=True)
