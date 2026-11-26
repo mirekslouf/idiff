@@ -34,17 +34,18 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         "numpy",
-        "scipy",
-        "scikit-image",  # skimage
-        "matplotlib",
-        "opencv-python",  # cv2
-        "onnxruntime",
-        "tqdm",
+        "scipy",         # bkg2d.py, deconv.py, peaks.py
+        "matplotlib",    # deconv.py, psf.py
+        "scikit-image",  # bkg2d.py, peaks.py
+        "opencv-python", # bkg2d.py: cv2.GaussianBlur
+        "onnxruntime",   # bkg2d.py: neural-network background removal
+        "tqdm",          # deconv.py
+        "stemdiff",      # psf.py: stemdiff.io for reading 4D-STEM datafiles
     ],
     extras_require={
-        # GPU acceleration, optional: CuPy needs a CUDA toolkit and the
-        # wheel must match the installed CUDA version, so it cannot be a
-        # hard requirement.
+        # GPU acceleration for deconv.py. CuPy is optional: the wheel must
+        # match the installed CUDA version, and deconv.py already guards the
+        # import and falls back to the CPU path (cuda=False is the default).
         "gpu": ["cupy-cuda12x"],
     },
     include_package_data=True)
